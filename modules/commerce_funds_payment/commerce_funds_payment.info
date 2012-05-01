@@ -1,0 +1,6 @@
+name = Commerce Funds Payment
+description = Adds a "Funds" payment method
+package = Commerce (contrib)
+dependencies[] = commerce_funds
+core = 7.x
+
