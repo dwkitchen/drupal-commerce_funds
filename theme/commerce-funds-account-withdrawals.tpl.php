@@ -1,4 +1,8 @@
 <?php
+/**
+* @file
+* Definition of commerece-funds-account-withdrawals.tpl.php.
+*/
 $user = user_load($variables['uid']);
 
 $transactions = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE uid='$user->uid' AND status='Pending Approval'");

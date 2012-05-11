@@ -1,5 +1,8 @@
 <?php
-
+/**
+* @file
+* Definition of commerece-escrow-cancel-form.tpl.php.
+*/
 $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id=" . $variables['transaction']);
 
 if (!$logo = theme_get_setting('logo_path')) {

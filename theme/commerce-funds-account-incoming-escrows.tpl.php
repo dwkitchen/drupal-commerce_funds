@@ -1,4 +1,8 @@
 <?php
+/**
+* @file
+* Definition of commerece-funds-account-incoming-escrows.tpl.php.
+*/
 $user = user_load($variables['uid']);
 
 global $base_url;

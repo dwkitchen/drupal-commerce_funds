@@ -1,4 +1,8 @@
 <?php
+/**
+* @file
+* Definition of commerece-funds-account-operations.tpl.php.
+*/
 global $base_url;
 $user = user_load($variables['uid']);
 ?>

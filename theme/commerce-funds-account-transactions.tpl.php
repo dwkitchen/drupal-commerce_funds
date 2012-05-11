@@ -1,4 +1,8 @@
 <?php
+/**
+* @file
+* Definition of commerece-funds-account-transactions.tpl.php.
+*/
 $user = user_load($variables['uid']);
 
 $transactions = db_query("SELECT * FROM {commerce_funds_transactions} WHERE uid='$user->uid' OR type='Transfer' AND reference=$user->uid");

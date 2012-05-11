@@ -1,1580 +1,1578 @@
 <?php
 
-/**
- * @file commerce_funds.module
- * */
 function commerce_funds_permission() {
-    return array(
-        'view own transactions' => array(
-            'title' => t('View Own Transactions'),
-            'description' => t('Allow users to view their transactions'),
-        ),
-        'deposit funds' => array(
-            'title' => t('Deposit Funds'),
-            'description' => t('Allow users to deposit funds'),
-        ),
-        'create escrow payment' => array(
-            'title' => t('Create Escrow Payment'),
-            'description' => t('Allow users to transfer funds'),
-        ),
-        'transfer funds' => array(
-            'title' => t('Transfer Funds'),
-            'description' => t('Allow users to transfer funds'),
-        ),
-        'withdraw funds' => array(
-            'title' => t('Withdraw Funds'),
-            'description' => t('Allow users to withdraw funds'),
-        ),
-        'administer withdraw requests' => array(
-            'title' => t('Administer Withdraw Requests'),
-            'description' => t('Allow users to approve/reject withdraw requests'),
-        ),
-        'view transactions' => array(
-            'title' => t('View Own Transactions'),
-            'description' => t('Allow users to view his own transactions'),
-        ),
-        'administer funds' => array(
-            'title' => t('Administer Funds'),
-            'description' => t('Gives users permission to administer all funds operations'),
-            'restrict access' => TRUE,
-        ),
-    );
+  return array(
+      'view own transactions' => array(
+          'title' => 'View Own Transactions',
+          'description' => 'Allow users to view their transactions',
+      ),
+      'deposit funds' => array(
+          'title' => t('Deposit Funds'),
+          'description' => 'Allow users to deposit funds',
+      ),
+      'create escrow payment' => array(
+          'title' => 'Create Escrow Payment',
+          'description' => t('Allow users to transfer funds'),
+      ),
+      'transfer funds' => array(
+          'title' => 'Transfer Funds',
+          'description' => 'Allow users to transfer funds',
+      ),
+      'withdraw funds' => array(
+          'title' => 'Withdraw Funds',
+          'description' => 'Allow users to withdraw funds',
+      ),
+      'administer withdraw requests' => array(
+          'title' => 'Administer Withdraw Requests',
+          'description' => 'Allow users to approve/reject withdraw requests',
+      ),
+      'view transactions' => array(
+          'title' => 'View Own Transactions',
+          'description' => 'Allow users to view his own transactions',
+      ),
+      'administer funds' => array(
+          'title' => 'Administer Funds',
+          'description' => 'Gives users permission to administer all funds operations',
+          'restrict access' => TRUE,
+      ),
+  );
 }
 
 function commerce_funds_menu() {
 
-    $items['admin/commerce/funds'] = array(
-        'title' => t('Funds Management'),
-        'description' => 'Administer Store Funds',
-        'page callback' => 'system_admin_menu_block_page',
-        'access arguments' => array('access administration pages'),
-        'file path' => drupal_get_path('module', 'system'),
-        'file' => 'system.admin.inc',
-        'weight' => -15,
-    );
+  $items['admin/commerce/funds'] = array(
+      'title' => 'Funds Management',
+      'description' => 'Administer Store Funds',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file path' => drupal_get_path('module', 'system'),
+      'file' => 'system.admin.inc',
+      'weight' => -15,
+  );
 
-    $items['admin/commerce/funds/view-transactions'] = array(
-        'title' => t('View Transactions'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_view_transactions'),
-        'access arguments' => array('view transactions'),
-        'type' => MENU_NORMAL_ITEM,
-    );
+  $items['admin/commerce/funds/view-transactions'] = array(
+      'title' => 'View Transactions',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_view_transactions'),
+      'access arguments' => array('view transactions'),
+      'type' => MENU_NORMAL_ITEM,
+  );
 
-    $items['admin/commerce/funds/view-withdraw-requests'] = array(
-        'title' => t('Withdrawal Requests'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_view_withdrawal_requests'),
-        'access arguments' => array('administer withdraw requests'),
-        'type' => MENU_NORMAL_ITEM,
-    );
+  $items['admin/commerce/funds/view-withdraw-requests'] = array(
+      'title' => 'Withdrawal Requests',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_view_withdrawal_requests'),
+      'access arguments' => array('administer withdraw requests'),
+      'type' => MENU_NORMAL_ITEM,
+  );
 
-    $items['admin/commerce/funds/withdrawals/approve/%'] = array(
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_approve_withdrawal_request', 5),
-        'access arguments' => array('view own transactions'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['admin/commerce/funds/withdrawals/approve/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_approve_withdrawal_request', 5),
+      'access arguments' => array('view own transactions'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['admin/commerce/funds/withdrawals/decline/%'] = array(
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_decline_withdrawal_request', 5),
-        'access arguments' => array('view own transactions'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['admin/commerce/funds/withdrawals/decline/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_decline_withdrawal_request', 5),
+      'access arguments' => array('view own transactions'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['admin/commerce/funds/configure'] = array(
-        'title' => t('Configuration'),
-        'description' => 'Configure Store Settings',
-        'page callback' => 'system_admin_menu_block_page',
-        'access arguments' => array('administer funds'),
-        'file path' => drupal_get_path('module', 'system'),
-        'file' => 'system.admin.inc',
-        'weight' => -15,
-    );
+  $items['admin/commerce/funds/configure'] = array(
+      'title' => 'Configuration',
+      'description' => 'Configure Store Settings',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer funds'),
+      'file path' => drupal_get_path('module', 'system'),
+      'file' => 'system.admin.inc',
+      'weight' => -15,
+  );
 
-    $items['admin/commerce/funds/configure/fees'] = array(
-        'title' => t('Fees'),
-        'page callback' => 'commerce_funds_configure_fees',
-        'access arguments' => array('administer funds'),
-        'type' => MENU_NORMAL_ITEM,
-    );
+  $items['admin/commerce/funds/configure/fees'] = array(
+      'title' => 'Fees',
+      'page callback' => 'commerce_funds_configure_fees',
+      'access arguments' => array('administer funds'),
+      'type' => MENU_NORMAL_ITEM,
+  );
 
-    $items['admin/commerce/funds/configure/withdraw-methods'] = array(
-        'title' => t('Withdrawal Methods'),
-        'page callback' => 'commerce_funds_configure_withdraw_methods',
-        'access arguments' => array('administer funds'),
-        'type' => MENU_NORMAL_ITEM,
-    );
+  $items['admin/commerce/funds/configure/withdraw-methods'] = array(
+      'title' => 'Withdrawal Methods',
+      'page callback' => 'commerce_funds_configure_withdraw_methods',
+      'access arguments' => array('administer funds'),
+      'type' => MENU_NORMAL_ITEM,
+  );
 
-    $items['user/funds/transactions'] = array(
-        'title' => t('Transactions'),
-        'page callback' => 'commerce_funds_get_user_transactions',
-        'access arguments' => array('view own transactions'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/transactions'] = array(
+      'title' => 'Transactions',
+      'page callback' => 'commerce_funds_get_user_transactions',
+      'access arguments' => array('view own transactions'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/withdrawals'] = array(
-        'title' => t('Withdrawal requests'),
-        'page callback' => 'commerce_funds_get_user_withdrawals',
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/withdrawals'] = array(
+      'title' => 'Withdrawal requests',
+      'page callback' => 'commerce_funds_get_user_withdrawals',
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/escrow-payments'] = array(
-        'title' => t('Escrow Payments'),
-        'page callback' => 'commerce_funds_get_user_escrow_payments',
-        'access arguments' => array('view own transactions'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/escrow-payments'] = array(
+      'title' => 'Escrow Payments',
+      'page callback' => 'commerce_funds_get_user_escrow_payments',
+      'access arguments' => array('view own transactions'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/deposit'] = array(
-        'title' => t('Deposit Funds'),
-        'page callback' => 'commerce_funds_deposit_funds',
-        'access arguments' => array('deposit funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/deposit'] = array(
+      'title' => 'Deposit Funds',
+      'page callback' => 'commerce_funds_deposit_funds',
+      'access arguments' => array('deposit funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/withdraw'] = array(
-        'title' => t('Submit a Withdrawal Request'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_withdraw_funds'),
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/withdraw'] = array(
+      'title' => 'Submit a Withdrawal Request',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_withdraw_funds'),
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/manage/withdrawal-methods'] = array(
-        'title' => t('Configure Withdrawal Methods'),
-        'page callback' => 'commerce_funds_manage_withdrawal_methods',
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/manage/withdrawal-methods'] = array(
+      'title' => 'Configure Withdrawal Methods',
+      'page callback' => 'commerce_funds_manage_withdrawal_methods',
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/manage/withdrawal-methods/paypal'] = array(
-        'title' => t('Configure Paypal'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_manage_withdrawal_method_paypal'),
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/manage/withdrawal-methods/paypal'] = array(
+      'title' => 'Configure Paypal',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_manage_withdrawal_method_paypal'),
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/manage/withdrawal-methods/skrill'] = array(
-        'title' => t('Configure Skrill'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_manage_withdrawal_method_skrill'),
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/manage/withdrawal-methods/skrill'] = array(
+      'title' => 'Configure Skrill',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_manage_withdrawal_method_skrill'),
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/manage/withdrawal-methods/bank_account'] = array(
-        'title' => t('Configure Bank Account'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_manage_withdrawal_method_bank_account'),
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/manage/withdrawal-methods/bank_account'] = array(
+      'title' => 'Configure Bank Account',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_manage_withdrawal_method_bank_account'),
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/manage/withdrawal-methods/check'] = array(
-        'title' => t('Configure Check'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_manage_withdrawal_method_check'),
-        'access arguments' => array('withdraw funds'),
-        'type' => MENU_LOCAL_TASK,
-    );
+  $items['user/funds/manage/withdrawal-methods/check'] = array(
+      'title' => 'Configure Check',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_manage_withdrawal_method_check'),
+      'access arguments' => array('withdraw funds'),
+      'type' => MENU_LOCAL_TASK,
+  );
 
-    $items['user/funds/create-escrow'] = array(
-        'title' => t('Create Escrow Payment'),
-        'page callback' => 'commerce_funds_escrow_payment',
-        'access arguments' => array('transfer funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/create-escrow'] = array(
+      'title' => 'Create Escrow Payment',
+      'page callback' => 'commerce_funds_escrow_payment',
+      'access arguments' => array('transfer funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/release-escrow/%'] = array(
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_release_escrow_payment', 3),
-        'access arguments' => array('transfer funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/release-escrow/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_release_escrow_payment', 3),
+      'access arguments' => array('transfer funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/cancel-escrow/%'] = array(
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_funds_cancel_escrow_payment', 3),
-        'access arguments' => array('transfer funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/cancel-escrow/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_funds_cancel_escrow_payment', 3),
+      'access arguments' => array('transfer funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    $items['user/funds/transfer'] = array(
-        'title' => t('Transfer Funds'),
-        'page callback' => 'commerce_funds_transfer_funds',
-        'access arguments' => array('transfer funds'),
-        'type' => MENU_CALLBACK,
-    );
+  $items['user/funds/transfer'] = array(
+      'title' => 'Transfer Funds',
+      'page callback' => 'commerce_funds_transfer_funds',
+      'access arguments' => array('transfer funds'),
+      'type' => MENU_CALLBACK,
+  );
 
-    return $items;
+  return $items;
 }
 
 function commerce_funds_approve_withdrawal_request($form, &$form_state, $request_id) {
 
-    $form['#$request_id'] = $request_id;
+  $form['#$request_id'] = $request_id;
 
-    $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id='$request_id'")->fetchAssoc();
+  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
 
-    $user = user_load($request['uid']);
+  $user = user_load($request['uid']);
 
-    return confirm_form($form, t('Approve Request?'), 'admin/commerce/funds/view-withdraw-requests', t('Are you sure you want to approve the withdrawal request made by ' . $user->mail . '?'), t('Yes'));
+  return confirm_form($form, check_plain('Approve Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to approve the withdrawal request made by ' . $user->mail . '?'), t('Yes'));
 }
 
-function commerce_funds_approve_withdrawal_request_submit($form, &$form_state){
-    
-    $request_id = $form['#$request_id'];
-    
-    $fees = variable_get('commerce_funds_fees', array());
-    
-    $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id='$request_id'")->fetchAssoc();
-    
-    $request['status'] = t('Approved');
-    
-    $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $request['uid'])->fetchAssoc();
-    $user_balance['balance'] -= max(array($request['amount'] * (1.0 + $fees[$request['method']] / 100.0), $request['amount'] - $fees[$request['method'].'_fixed'])) ;
-    
-    drupal_write_record('commerce_funds_user_funds', $user_balance, 'uid');
-    drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
-    
-    drupal_goto('admin/commerce/funds/view-withdraw-requests');
+function commerce_funds_approve_withdrawal_request_submit($form, &$form_state) {
+
+  $request_id = $form['#$request_id'];
+
+  $fees = variable_get('commerce_funds_fees', array());
+
+  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
+
+  $request['status'] = t('Approved');
+
+  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $request['uid'])->fetchAssoc();
+  $user_balance['balance'] -= max(array($request['amount'] * (1.0 + $fees[$request['method']] / 100.0), $request['amount'] - $fees[$request['method'] . '_fixed']));
+
+  drupal_write_record('commerce_funds_user_funds', $user_balance, 'uid');
+  drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
+
+  drupal_goto('admin/commerce/funds/view-withdraw-requests');
 }
 
 function commerce_funds_decline_withdrawal_request($form, &$form_state, $request_id) {
 
-    $form['#$request_id'] = $request_id;
+  $form['#$request_id'] = $request_id;
 
-    $form['reason'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Reason for Decline'),
-        '#description' => '',
-    );
+  $form['reason'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Reason for Decline'),
+      '#description' => '',
+  );
 
-    $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id='$request_id'")->fetchAssoc();
+  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
 
-    $user = user_load($request['uid']);
+  $user = user_load($request['uid']);
 
-    return confirm_form($form, t('Decline Request?'), 'admin/commerce/funds/view-withdraw-requests', t('Are you sure you want to decline the withdrawal request made by ' . $user->mail . '?'), t('Yes'));
+  return confirm_form($form, check_plain('Decline Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to decline the withdrawal request made by ' . $user->mail . '?'), check_plain('Yes'));
 }
 
-function commerce_funds_decline_withdrawal_request_submit($form, &$form_state){
-    
-    $request_id = $form['#$request_id'];
-    
-    $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id='$request_id'")->fetchAssoc();
-    
-    $request['status'] = t('Declined');
-    $request['notes'] = $form_state['values']['reason'];
-    
-    drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
-    
-    drupal_goto('admin/commerce/funds/view-withdraw-requests');
+function commerce_funds_decline_withdrawal_request_submit($form, &$form_state) {
+
+  $request_id = $form['#$request_id'];
+
+  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
+
+  $request['status'] = t('Declined');
+  $request['notes'] = $form_state['values']['reason'];
+
+  drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
+
+  drupal_goto('admin/commerce/funds/view-withdraw-requests');
 }
 
 function commerce_funds_cancel_escrow_payment($form, &$form_state, $transaction_id) {
 
-    $form['#$transaction_id'] = $transaction_id;
+  $form['#$transaction_id'] = $transaction_id;
 
-    $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id='$transaction_id'")->fetchAssoc();
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
 
-    $user = user_load($transaction['uid']);
+  $user = user_load($transaction['uid']);
 
-    return confirm_form($form, t('Cancel Escrow Payment?'), 'user/funds/escrow-payments', t('Are you sure you want to cancel this payment and return the funds to ' . $user->mail . '?'), t('Yes'));
+  return confirm_form($form, check_plain('Cancel Escrow Payment?'), 'user/funds/escrow-payments', check_plain('Are you sure you want to cancel this payment and return the funds to ' . $user->mail . '?'), check_plain('Yes'));
 }
 
 function commerce_funds_cancel_escrow_payment_submit($form, &$form_state) {
 
-    $transaction_id = $form['#$transaction_id'];
+  $transaction_id = $form['#$transaction_id'];
 
-    $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id='$transaction_id'")->fetchAssoc();
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
 
-    $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['uid'])->fetchAssoc();
+  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['uid'])->fetchAssoc();
 
-    $from_user_balance['balance'] += $transaction['amount'];
+  $from_user_balance['balance'] += $transaction['amount'];
 
-    drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
+  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
 
-    $transaction['type'] = 'Cancelled Escrow Payment';
+  $transaction['type'] = 'Cancelled Escrow Payment';
 
-    drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
-    
-    drupal_mail('commerce_funds', 'escrow_cancel_from', user_load($transaction['uid'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
-    drupal_mail('commerce_funds', 'escrow_cancel_to', user_load($transaction['reference'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
+  drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
 
-    drupal_goto('user/funds/escrow-payments');
+  drupal_mail('commerce_funds', 'escrow_cancel_from', user_load($transaction['uid'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
+  drupal_mail('commerce_funds', 'escrow_cancel_to', user_load($transaction['reference'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
+
+  drupal_goto('user/funds/escrow-payments');
 }
 
 function commerce_funds_release_escrow_payment($form, &$form_state, $transaction_id) {
 
-    $form['#$transaction_id'] = $transaction_id;
+  $form['#$transaction_id'] = $transaction_id;
 
-    $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id='$transaction_id'")->fetchAssoc();
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
 
-    $user = user_load($transaction['reference']);
+  $user = user_load($transaction['reference']);
 
-    return confirm_form($form, t('Release Escrow Payment?'), 'user/funds/escrow-payments', t('Are you sure you want to release this payment and send the funds to ' . $user->mail . '?'), t('Yes'));
+  return confirm_form($form, check_plain('Release Escrow Payment?'), 'user/funds/escrow-payments', check_plain('Are you sure you want to release this payment and send the funds to ' . $user->mail . '?'), check_plain('Yes'));
 }
 
 function commerce_funds_release_escrow_payment_submit($form, &$form_state) {
 
-    $transaction_id = $form['#$transaction_id'];
+  $transaction_id = $form['#$transaction_id'];
 
-    $fees = variable_get('commerce_funds_fees', array());
+  $fees = variable_get('commerce_funds_fees', array());
 
-    $fee = array_key_exists('escrow', $fees) ? $fees['escrow'] : 0;
-    $fee_fixed = array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed'] : 0;
+  $fee = array_key_exists('escrow', $fees) ? $fees['escrow'] : 0;
+  $fee_fixed = array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed'] : 0;
 
-    $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id='$transaction_id'")->fetchAssoc();
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
 
-    $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['reference'])->fetchAssoc();
+  $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['reference'])->fetchAssoc();
 
-    $escrow_after_fee = $transaction['amount'] * (1.0 - $fee / 100.0);
-    $escrow_after_fee_fixed = $transaction['amount'] - $fee_fixed;
+  $escrow_after_fee = $transaction['amount'] * (1.0 - $fee / 100.0);
+  $escrow_after_fee_fixed = $transaction['amount'] - $fee_fixed;
 
-    $to_user_balance['balance'] += min(array($escrow_after_fee, $escrow_after_fee_fixed));
+  $to_user_balance['balance'] += min(array($escrow_after_fee, $escrow_after_fee_fixed));
 
-    drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
+  drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
 
-    $transaction['type'] = 'Completed Escrow Payment';
+  $transaction['type'] = 'Completed Escrow Payment';
 
-    drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
+  drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
 
-    drupal_goto('user/funds/escrow-payments');
+  drupal_goto('user/funds/escrow-payments');
 }
 
 function commerce_funds_commerce_product_type_info() {
 
-    return array(
-        'deposit' => array(
-            'type' => 'deposit',
-            'name' => 'Funds Deposit',
-            'description' => 'Stores a Funds Deposit Operation',
-            'help' => '',
-            'revision' => 1
-        )
-    );
+  return array(
+      'deposit' => array(
+          'type' => 'deposit',
+          'name' => 'Funds Deposit',
+          'description' => 'Stores a Funds Deposit Operation',
+          'help' => '',
+          'revision' => 1
+      )
+  );
 }
 
 function commerce_funds_view_transactions($form, &$form_state) {
-    
-    $transactions = db_query("SELECT * FROM {commerce_funds_transactions}");
-    
-    $types = array('Deposit', 'Transfer', 'Escrow Payment', 'Completed Escrow Payment', 'Cancelled Escrow Payment');
 
-    $header = array('Time', 'Type', 'User', 'Amount', 'Details');
+  $transactions = db_query("SELECT * FROM {commerce_funds_transactions}");
 
-    $rows = array();
-    
-    $saved_types = array();
+  $types = array('Deposit', 'Transfer', 'Escrow Payment', 'Completed Escrow Payment', 'Cancelled Escrow Payment');
 
-    if (array_key_exists('commerce_funds_filter_type', $_SESSION)) {
-        foreach ($_SESSION['commerce_funds_filter_type'] as $index) {
-            $saved_types[] = $types[$index];
-        }
+  $header = array('Time', 'Type', 'User', 'Amount', 'Details');
+
+  $rows = array();
+
+  $saved_types = array();
+
+  if (array_key_exists('commerce_funds_filter_type', $_SESSION)) {
+    foreach ($_SESSION['commerce_funds_filter_type'] as $index) {
+      $saved_types[] = $types[$index];
     }
+  }
 
-    foreach ($transactions as $transaction) {
-        if ((array_key_exists('commerce_funds_filter_type', $_SESSION) && in_array($transaction->type, $saved_types)) || !array_key_exists('commerce_funds_filter_type', $_SESSION)) {
-                $user = user_load($transaction->uid);
-                $to_user = $transaction->type == 'Transfer'? user_load($transaction->reference) : array();
-                $rows[] = array(date('d/m/Y   g:i:s A', $transaction->created), $transaction->type, $user->mail, commerce_currency_format($transaction->amount, commerce_default_currency()), $transaction->type == 'Transfer'? '<br>To: '.$to_user->mail : '');
-        }
+  foreach ($transactions as $transaction) {
+    if ((array_key_exists('commerce_funds_filter_type', $_SESSION) && in_array($transaction->type, $saved_types)) || !array_key_exists('commerce_funds_filter_type', $_SESSION)) {
+      $user = user_load($transaction->uid);
+      $to_user = $transaction->type == 'Transfer' ? user_load($transaction->reference) : array();
+      $rows[] = array(date('d/m/Y   g:i:s A', $transaction->created), $transaction->type, $user->mail, commerce_currency_format($transaction->amount, commerce_default_currency()), $transaction->type == 'Transfer' ? '<br />To: ' . $to_user->mail : '');
     }
+  }
 
-    $form['filter_type'] = array(
-        '#type' => 'select',
-        '#title' => t('Type'),
-        '#options' => $types,
-        '#attributes' => array('multiple' => TRUE),
-        '#multiple' => TRUE,
-        '#size' => 5,
-        '#default_value' => array_key_exists('commerce_funds_filter_type', $_SESSION) ? $_SESSION['commerce_funds_filter_type'] : '',
-    );
+  $form['filter_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Type'),
+      '#options' => $types,
+      '#attributes' => array('multiple' => TRUE),
+      '#multiple' => TRUE,
+      '#size' => 5,
+      '#default_value' => array_key_exists('commerce_funds_filter_type', $_SESSION) ? $_SESSION['commerce_funds_filter_type'] : '',
+  );
 
-    $form['filter'] = array(
-        '#type' => 'submit',
-        '#value' => t('Filter'),
-    );
+  $form['filter'] = array(
+      '#type' => 'submit',
+      '#value' => t('Filter'),
+  );
 
-    $form['reset'] = array(
-        '#type' => 'submit',
-        '#value' => t('Reset'),
-        '#suffix' => theme('table', array('header' => $header, 'rows' => $rows))
-    );
+  $form['reset'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset'),
+      '#suffix' => theme('table', array('header' => $header, 'rows' => $rows))
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_view_transactions_submit($form, &$form_state) {
-    if ($form_state['values']['op'] == 'Filter') {
-        if (!empty($form_state['values']['filter_type']))
-            $_SESSION['commerce_funds_filter_type'] = $form_state['values']['filter_type']; else {
-            unset($_SESSION['commerce_funds_filter_type']);
-        }
-    } elseif ($form_state['values']['op'] == 'Reset') {
-        unset($_SESSION['commerce_funds_filter_type']);
+  if ($form_state['values']['op'] == 'Filter') {
+    if (!empty($form_state['values']['filter_type']))
+      $_SESSION['commerce_funds_filter_type'] = $form_state['values']['filter_type']; else {
+      unset($_SESSION['commerce_funds_filter_type']);
     }
+  }
+  elseif ($form_state['values']['op'] == 'Reset') {
+    unset($_SESSION['commerce_funds_filter_type']);
+  }
 
-    $form_state['redirect'] = 'admin/commerce/funds/view-transactions';
+  $form_state['redirect'] = 'admin/commerce/funds/view-transactions';
 }
 
 function commerce_funds_view_withdrawal_requests($form, &$form_state) {
 
-    $requests = db_query("SELECT * FROM {commerce_funds_withdraw_requests}");
+  $requests = db_query("SELECT * FROM {commerce_funds_withdraw_requests}");
 
-    $header = array('Time', 'User', 'Method', 'Amount', 'Request Status', 'Operations');
+  $header = array('Time', 'User', 'Method', 'Amount', 'Request Status', 'Operations');
 
-    $status = array(
-        'Pending Approval', 'Approved', 'Declined'
-    );
+  $status = array(
+      'Pending Approval', 'Approved', 'Declined'
+  );
 
-    $saved_status = array();
+  $saved_status = array();
 
-    if (array_key_exists('commerce_funds_filter_status', $_SESSION)) {
-        foreach ($_SESSION['commerce_funds_filter_status'] as $index) {
-            $saved_status[] = $status[$index];
-        }
+  if (array_key_exists('commerce_funds_filter_status', $_SESSION)) {
+    foreach ($_SESSION['commerce_funds_filter_status'] as $index) {
+      $saved_status[] = $status[$index];
     }
+  }
 
 
-    $rows = array();
+  $rows = array();
 
-    foreach ($requests as $request) {
-        if ((array_key_exists('commerce_funds_filter_status', $_SESSION) && in_array($request->status, $saved_status)) || !array_key_exists('commerce_funds_filter_status', $_SESSION)) {
-            if ((array_key_exists('commerce_funds_filter_method', $_SESSION) && in_array($request->method, $_SESSION['commerce_funds_filter_method'])) || !array_key_exists('commerce_funds_filter_method', $_SESSION)) {
-                $user = user_load($request->uid);
-                $rows[] = array(date('d/m/Y   g:i:s A', $request->created), $user->name, $request->method, commerce_currency_format($request->amount, commerce_default_currency()), $request->status == 'Declined'? $request->status.'<br><br>Reason: '.$request->notes : $request->status, '<ul><li>' . l(t('Approve'), 'admin/commerce/funds/withdrawals/approve/' . $request->request_id) . '</li><li>' . l(t('Decline'), 'admin/commerce/funds/withdrawals/decline/' . $request->request_id) . '</li>');
-            }
-        }
+  foreach ($requests as $request) {
+    if ((array_key_exists('commerce_funds_filter_status', $_SESSION) && in_array($request->status, $saved_status)) || !array_key_exists('commerce_funds_filter_status', $_SESSION)) {
+      if ((array_key_exists('commerce_funds_filter_method', $_SESSION) && in_array($request->method, $_SESSION['commerce_funds_filter_method'])) || !array_key_exists('commerce_funds_filter_method', $_SESSION)) {
+        $user = user_load($request->uid);
+        $rows[] = array(date('d/m/Y   g:i:s A', $request->created), $user->name, $request->method, commerce_currency_format($request->amount, commerce_default_currency()), $request->status == 'Declined' ? $request->status . '<br /><br />Reason: ' . $request->notes : $request->status, '<ul><li>' . l(t('Approve'), 'admin/commerce/funds/withdrawals/approve/' . $request->request_id) . '</li><li>' . l(t('Decline'), 'admin/commerce/funds/withdrawals/decline/' . $request->request_id) . '</li>');
+      }
     }
+  }
 
-    $form['filter_method'] = array(
-        '#type' => 'select',
-        '#title' => t('Method'),
-        '#options' => commerce_funds_get_enabled_withdrawal_methods(),
-        '#attributes' => array('multiple' => TRUE),
-        '#multiple' => TRUE,
-        '#size' => count(commerce_funds_get_enabled_withdrawal_methods()),
-        '#default_value' => array_key_exists('commerce_funds_filter_method', $_SESSION) ? $_SESSION['commerce_funds_filter_method'] : '',
-    );
+  $form['filter_method'] = array(
+      '#type' => 'select',
+      '#title' => t('Method'),
+      '#options' => commerce_funds_get_enabled_withdrawal_methods(),
+      '#attributes' => array('multiple' => TRUE),
+      '#multiple' => TRUE,
+      '#size' => count(commerce_funds_get_enabled_withdrawal_methods()),
+      '#default_value' => array_key_exists('commerce_funds_filter_method', $_SESSION) ? $_SESSION['commerce_funds_filter_method'] : '',
+  );
 
-    $form['filter_status'] = array(
-        '#type' => 'select',
-        '#title' => t('Status'),
-        '#options' => $status,
-        '#attributes' => array('multiple' => TRUE),
-        '#multiple' => TRUE,
-        '#size' => 3,
-        '#default_value' => array_key_exists('commerce_funds_filter_status', $_SESSION) ? $_SESSION['commerce_funds_filter_status'] : '',
-    );
+  $form['filter_status'] = array(
+      '#type' => 'select',
+      '#title' => t('Status'),
+      '#options' => $status,
+      '#attributes' => array('multiple' => TRUE),
+      '#multiple' => TRUE,
+      '#size' => 3,
+      '#default_value' => array_key_exists('commerce_funds_filter_status', $_SESSION) ? $_SESSION['commerce_funds_filter_status'] : '',
+  );
 
-    $form['filter'] = array(
-        '#type' => 'submit',
-        '#value' => t('Filter'),
-    );
+  $form['filter'] = array(
+      '#type' => 'submit',
+      '#value' => t('Filter'),
+  );
 
-    $form['reset'] = array(
-        '#type' => 'submit',
-        '#value' => t('Reset'),
-        '#suffix' => theme('table', array('header' => $header, 'rows' => $rows))
-    );
+  $form['reset'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset'),
+      '#suffix' => theme('table', array('header' => $header, 'rows' => $rows))
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_view_withdrawal_requests_submit($form, &$form_state) {
-    if ($form_state['values']['op'] == 'Filter') {
-        if (!empty($form_state['values']['filter_status']))
-            $_SESSION['commerce_funds_filter_status'] = $form_state['values']['filter_status']; else {
-            unset($_SESSION['commerce_funds_filter_status']);
-        }
-        if (!empty($form_state['values']['filter_method']))
-            $_SESSION['commerce_funds_filter_method'] = $form_state['values']['filter_method']; else {
-            unset($_SESSION['commerce_funds_filter_method']);
-        }
-    } elseif ($form_state['values']['op'] == 'Reset') {
-        unset($_SESSION['commerce_funds_filter_status']);
-        unset($_SESSION['commerce_funds_filter_method']);
+  if ($form_state['values']['op'] == 'Filter') {
+    if (!empty($form_state['values']['filter_status']))
+      $_SESSION['commerce_funds_filter_status'] = $form_state['values']['filter_status']; else {
+      unset($_SESSION['commerce_funds_filter_status']);
     }
+    if (!empty($form_state['values']['filter_method']))
+      $_SESSION['commerce_funds_filter_method'] = $form_state['values']['filter_method']; else {
+      unset($_SESSION['commerce_funds_filter_method']);
+    }
+  }
+  elseif ($form_state['values']['op'] == 'Reset') {
+    unset($_SESSION['commerce_funds_filter_status']);
+    unset($_SESSION['commerce_funds_filter_method']);
+  }
 
-    $form_state['redirect'] = 'admin/commerce/funds/view-withdraw-requests';
+  $form_state['redirect'] = 'admin/commerce/funds/view-withdraw-requests';
 }
 
 function commerce_funds_configure_fees() {
 
-    $payment_methods = commerce_payment_methods();
+  $payment_methods = commerce_payment_methods();
 
-    $enabled_methods = array();
+  $enabled_methods = array();
 
-    foreach ($payment_methods as $payment_method) {
+  foreach ($payment_methods as $payment_method) {
 
-        $enabled_methods[] = $payment_method;
-    }
+    $enabled_methods[] = $payment_method;
+  }
 
-    return drupal_get_form('commerce_funds_configure_fees_form', $enabled_methods);
+  return drupal_get_form('commerce_funds_configure_fees_form', $enabled_methods);
 }
 
 function commerce_funds_configure_fees_form($form, &$form_state, $enabled_methods) {
 
-    $form['#enabledmethods'] = $enabled_methods;
+  $form['#enabledmethods'] = $enabled_methods;
 
-    $fees = variable_get('commerce_funds_fees', array());
+  $fees = variable_get('commerce_funds_fees', array());
 
-    $form['transfer'] = array(
+  $form['transfer'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Transfer Fee (%)'),
+      '#description' => check_plain('Fee taken on transfers'),
+      '#default_value' => array_key_exists('transfer', $fees) ? $fees['transfer'] : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+  );
+
+  $form['transfer_fixed'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Fixed Transfer Fee (' . commerce_default_currency() . ')'),
+      '#description' => check_plain('Fixed fee taken on transfers'),
+      '#default_value' => array_key_exists('transfer_fixed', $fees) ? $fees['transfer_fixed'] / 100 : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+  );
+
+  $form['escrow'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Escrow Fee (%)'),
+      '#description' => check_plain('Fee taken on escrows'),
+      '#default_value' => array_key_exists('escrow', $fees) ? $fees['escrow'] : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+  );
+
+  $form['escrow_fixed'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Fixed Escrow Fee (' . commerce_default_currency() . ')'),
+      '#description' => check_plain('Fixed fee taken on escrows'),
+      '#default_value' => array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed'] / 100 : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+  );
+
+  $form['deposit'] = array(
+      '#type' => 'fieldset',
+      '#title' => check_plain('Deposit Fees'),
+      '#collapsible' => FALSE,
+  );
+
+  foreach ($enabled_methods as $method) {
+    $method_id = $method['method_id'];
+    $form['deposit'][$method_id] = array(
         '#type' => 'textfield',
-        '#title' => t('Transfer Fee (%)'),
-        '#description' => t('Fee taken on transfers'),
-        '#default_value' => array_key_exists('transfer', $fees) ? $fees['transfer'] : '0',
+        '#title' => check_plain($method['title'] . ' Fee (%)'),
+        '#description' => check_plain('Fee taken for Deposits made using ' . $method['title']),
+        '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
         '#size' => 5,
         '#maxlength' => 5,
         '#required' => TRUE,
     );
-    
-    $form['transfer_fixed'] = array(
+    $form['deposit'][$method_id . '_fixed'] = array(
         '#type' => 'textfield',
-        '#title' => t('Fixed Transfer Fee (' . commerce_default_currency() . ')'),
-        '#description' => t('Fixed fee taken on transfers'),
-        '#default_value' => array_key_exists('transfer_fixed', $fees) ? $fees['transfer_fixed']/100 : '0',
+        '#title' => check_plain('Fixed ' . $method['title'] . ' Fee (' . commerce_default_currency() . ')'),
+        '#description' => check_plain('Fixed Fee taken for Deposits made using ' . $method['title']),
+        '#default_value' => array_key_exists($method_id . '_fixed', $fees) ? $fees[$method_id . '_fixed'] / 100 : '0',
         '#size' => 5,
         '#maxlength' => 5,
         '#required' => TRUE,
     );
+  }
 
-    $form['escrow'] = array(
+  $form['withdraw'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Withdrawal Fees'),
+      '#collapsible' => FALSE,
+  );
+
+  $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
+
+  foreach ($enabled_methods as $key => $method) {
+    $method_id = $key;
+    $form['withdraw'][$method_id] = array(
         '#type' => 'textfield',
-        '#title' => t('Escrow Fee (%)'),
-        '#description' => t('Fee taken on escrows'),
-        '#default_value' => array_key_exists('escrow', $fees) ? $fees['escrow'] : '0',
+        '#title' => check_plain($method . ' Fee (%)'),
+        '#description' => check_plain('Fee taken for Withdrawals made using ' . $method),
+        '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
         '#size' => 5,
         '#maxlength' => 5,
         '#required' => TRUE,
     );
-    
-    $form['escrow_fixed'] = array(
+    $form['withdraw'][$method_id . '_fixed'] = array(
         '#type' => 'textfield',
-        '#title' => t('Fixed Escrow Fee (' . commerce_default_currency() . ')'),
-        '#description' => t('Fixed fee taken on escrows'),
-        '#default_value' => array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed']/100 : '0',
+        '#title' => check_plain('Fixed ' . $method . ' Fee (' . commerce_default_currency() . ')'),
+        '#description' => check_plain('Fixed Fee taken for Withdrawals made using ' . $method),
+        '#default_value' => array_key_exists($method_id . '_fixed', $fees) ? $fees[$method_id . '_fixed'] / 100 : '0',
         '#size' => 5,
         '#maxlength' => 5,
         '#required' => TRUE,
     );
+  }
 
-    $form['deposit'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Deposit Fees'),
-        '#collapsible' => FALSE,
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+  );
 
-    foreach ($enabled_methods as $method) {
-        $method_id = $method['method_id'];
-        $form['deposit'][$method_id] = array(
-            '#type' => 'textfield',
-            '#title' => t($method['title'] . ' Fee (%)'),
-            '#description' => t('Fee taken for Deposits made using ' . $method['title']),
-            '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
-            '#size' => 5,
-            '#maxlength' => 5,
-            '#required' => TRUE,
-        );
-        $form['deposit'][$method_id.'_fixed'] = array(
-            '#type' => 'textfield',
-            '#title' => t('Fixed '.$method['title'] . ' Fee (' . commerce_default_currency() . ')'),
-            '#description' => t('Fixed Fee taken for Deposits made using ' . $method['title']),
-            '#default_value' => array_key_exists($method_id.'_fixed', $fees) ? $fees[$method_id.'_fixed']/100 : '0',
-            '#size' => 5,
-            '#maxlength' => 5,
-            '#required' => TRUE,
-        );
-    }
-
-    $form['withdraw'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Withdrawal Fees'),
-        '#collapsible' => FALSE,
-    );
-
-    $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
-
-    foreach ($enabled_methods as $key => $method) {
-        $method_id = $key;
-        $form['withdraw'][$method_id] = array(
-            '#type' => 'textfield',
-            '#title' => t($method . ' Fee (%)'),
-            '#description' => t('Fee taken for Withdrawals made using ' . $method),
-            '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
-            '#size' => 5,
-            '#maxlength' => 5,
-            '#required' => TRUE,
-        );
-        $form['withdraw'][$method_id.'_fixed'] = array(
-            '#type' => 'textfield',
-            '#title' => t('Fixed '.$method . ' Fee (' . commerce_default_currency() . ')'),
-            '#description' => t('Fixed Fee taken for Withdrawals made using ' . $method),
-            '#default_value' => array_key_exists($method_id.'_fixed', $fees) ? $fees[$method_id.'_fixed']/100 : '0',
-            '#size' => 5,
-            '#maxlength' => 5,
-            '#required' => TRUE,
-        );
-    }
-
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save'),
-    );
-
-    return $form;
+  return $form;
 }
 
 function commerce_funds_configure_fees_form_validate($form, &$form_state) {
 
-    $enabled_methods = $form['#enabledmethods'];
+  $enabled_methods = $form['#enabledmethods'];
 
-    foreach ($enabled_methods as $method) {
-        if (!is_numeric($form_state['values'][$method['method_id']])) {
-            form_set_error('amount', t('Value must be Numeric'));
-            return FALSE;
-        }
+  foreach ($enabled_methods as $method) {
+    if (!is_numeric($form_state['values'][$method['method_id']])) {
+      form_set_error('amount', t('Value must be Numeric'));
+      return FALSE;
     }
+  }
 }
 
 function commerce_funds_configure_fees_form_submit($form, &$form_state) {
 
-    $fees = array();
+  $fees = array();
 
-    $fees['transfer'] = $form_state['values']['transfer'];
-    $fees['transfer_fixed'] = $form_state['values']['transfer_fixed'] * 100;
-    $fees['escrow'] = $form_state['values']['escrow'];
-    $fees['escrow_fixed'] = $form_state['values']['escrow_fixed'] * 100;
+  $fees['transfer'] = $form_state['values']['transfer'];
+  $fees['transfer_fixed'] = $form_state['values']['transfer_fixed'] * 100;
+  $fees['escrow'] = $form_state['values']['escrow'];
+  $fees['escrow_fixed'] = $form_state['values']['escrow_fixed'] * 100;
 
-    $enabled_methods = $form['#enabledmethods'];
+  $enabled_methods = $form['#enabledmethods'];
 
-    foreach ($enabled_methods as $method) {
-        $method_id = $method['method_id'];
-        $fees[$method_id] = $form_state['values'][$method_id];
-        $fees[$method_id.'_fixed'] = $form_state['values'][$method_id.'_fixed'] * 100;
-    }
+  foreach ($enabled_methods as $method) {
+    $method_id = $method['method_id'];
+    $fees[$method_id] = $form_state['values'][$method_id];
+    $fees[$method_id . '_fixed'] = $form_state['values'][$method_id . '_fixed'] * 100;
+  }
 
-    $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
+  $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
 
-    foreach ($enabled_methods as $key => $method) {
-        $method_id = $key;
-        $fees[$method_id] = $form_state['values'][$method_id];
-        $fees[$method_id.'_fixed'] = $form_state['values'][$method_id.'_fixed'] * 100;
-    }
+  foreach ($enabled_methods as $key => $method) {
+    $method_id = $key;
+    $fees[$method_id] = $form_state['values'][$method_id];
+    $fees[$method_id . '_fixed'] = $form_state['values'][$method_id . '_fixed'] * 100;
+  }
 
-    variable_set('commerce_funds_fees', $fees);
+  variable_set('commerce_funds_fees', $fees);
 }
 
 function commerce_funds_block_info() {
-    $blocks['account_balance'] = array(
-        'info' => t('Account Balance'),
-        'cache' => DRUPAL_NO_CACHE,
-    );
+  $blocks['account_balance'] = array(
+      'info' => t('Account Balance'),
+      'cache' => DRUPAL_NO_CACHE,
+  );
 
-    $blocks['funds_operations'] = array(
-        'info' => t('Account Funds Operations'),
-        'cache' => DRUPAL_NO_CACHE,
-    );
+  $blocks['funds_operations'] = array(
+      'info' => t('Account Funds Operations'),
+      'cache' => DRUPAL_NO_CACHE,
+  );
 
-    return $blocks;
+  return $blocks;
 }
 
 function commerce_funds_block_view($delta = '') {
 
-    $block = array();
+  $block = array();
 
-    switch ($delta) {
-        case 'account_balance':
-            $block['subject'] = t('Balance');
-            $block['content'] = commerce_funds_get_user_balance();
-            break;
-        case 'funds_operations':
-            $block['subject'] = t('Operations');
-            $block['content'] = commerce_funds_get_user_operations();
-            break;
-    }
+  switch ($delta) {
+    case 'account_balance':
+      $block['subject'] = t('Balance');
+      $block['content'] = commerce_funds_get_user_balance();
+      break;
+    case 'funds_operations':
+      $block['subject'] = t('Operations');
+      $block['content'] = commerce_funds_get_user_operations();
+      break;
+  }
 
-    return $block;
+  return $block;
 }
 
 function commerce_funds_theme() {
-    return array(
-        'account_balance' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-balance',
-        ),
-        'account_operations' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-operations',
-        ),
-        'account_transactions' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-transactions',
-        ),
-        'account_withdrawals' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-withdrawals',
-        ),
-        'account_outgoing_escrows' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-outgoing-escrows',
-        ),
-        'account_incoming_escrows' => array(
-            'variables' => array('uid' => NULL),
-            'template' => 'theme/commerce-funds-account-incoming-escrows',
-        ),
-        'escrow_cancel_from' => array(
-            'variables' => array('transaction' => NULL),
-            'template' => 'theme/emails/commerce-escrow-cancel-from',
-        ),
-        'escrow_cancel_to' => array(
-            'variables' => array('transaction' => NULL),
-            'template' => 'theme/emails/commerce-escrow-cancel-to',
-        ),
-    );
+  return array(
+      'account_balance' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-balance',
+      ),
+      'account_operations' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-operations',
+      ),
+      'account_transactions' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-transactions',
+      ),
+      'account_withdrawals' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-withdrawals',
+      ),
+      'account_outgoing_escrows' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-outgoing-escrows',
+      ),
+      'account_incoming_escrows' => array(
+          'variables' => array('uid' => NULL),
+          'template' => 'theme/commerce-funds-account-incoming-escrows',
+      ),
+      'escrow_cancel_from' => array(
+          'variables' => array('transaction' => NULL),
+          'template' => 'theme/emails/commerce-escrow-cancel-from',
+      ),
+      'escrow_cancel_to' => array(
+          'variables' => array('transaction' => NULL),
+          'template' => 'theme/emails/commerce-escrow-cancel-to',
+      ),
+  );
 }
 
 function commerce_funds_get_user_balance() {
-    global $user;
-    return theme('account_balance', array('uid' => $user->uid));
+  global $user;
+  return theme('account_balance', array('uid' => $user->uid));
 }
 
 function commerce_funds_get_user_operations() {
-    global $user;
-    return theme('account_operations', array('uid' => $user->uid));
+  global $user;
+  return theme('account_operations', array('uid' => $user->uid));
 }
 
 function commerce_funds_get_user_transactions() {
-    global $user;
-    return theme('account_transactions', array('uid' => $user->uid));
+  global $user;
+  return theme('account_transactions', array('uid' => $user->uid));
 }
 
 function commerce_funds_get_user_withdrawals() {
-    global $user;
-    return theme('account_withdrawals', array('uid' => $user->uid));
+  global $user;
+  return theme('account_withdrawals', array('uid' => $user->uid));
 }
 
 function commerce_funds_get_user_escrow_payments() {
-    global $user;
-    return theme('account_incoming_escrows', array('uid' => $user->uid)) . theme('account_outgoing_escrows', array('uid' => $user->uid));
+  global $user;
+  return theme('account_incoming_escrows', array('uid' => $user->uid)) . theme('account_outgoing_escrows', array('uid' => $user->uid));
 }
 
 function commerce_funds_deposit_funds() {
-    return drupal_get_form('commerce_funds_deposit_funds_form');
+  return drupal_get_form('commerce_funds_deposit_funds_form');
 }
 
 function commerce_funds_deposit_funds_form($form, &$form_state) {
 
-    $form['amount'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Deposit Amount (' . commerce_default_currency() . ')'),
-        '#description' => t('Please enter the amount you wish to deposit in ' . commerce_default_currency()),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Deposit Amount (' . commerce_default_currency() . ')'),
+      '#description' => t('Please enter the amount you wish to deposit in ' . commerce_default_currency()),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['notes'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Notes'),
-        '#description' => '',
-    );
+  $form['notes'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Notes'),
+      '#description' => '',
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Next'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Next'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_default_rules_configuration() {
 
-    $rules = array();
-    $rule = rules_reaction_rule();
+  $rules = array();
+  $rule = rules_reaction_rule();
 
-    $rule->label = t('Adds funds to balance when deposit is completed');
-    $rule->active = TRUE;
+  $rule->label = t('Adds funds to balance when deposit is completed');
+  $rule->active = TRUE;
 
-    $rule->event('commerce_checkout_complete')
-            ->action('commerce_funds_update_balance', array(
-                'commerce_order:select' => 'commerce-order',
-            ));
+  $rule->event('commerce_checkout_complete')
+          ->action('commerce_funds_update_balance', array(
+              'commerce_order:select' => 'commerce-order',
+          ));
 
-    $rules['commerce_funds_add_funds_to_balance'] = $rule;
+  $rules['commerce_funds_add_funds_to_balance'] = $rule;
 
-    return $rules;
+  return $rules;
 }
 
 function commerce_funds_rules_action_info() {
-    $actions = array();
+  $actions = array();
 
-    $actions['commerce_funds_update_balance'] = array(
-        'label' => t('Update user account balance'),
-        'parameter' => array(
-            'commerce_order' => array(
-                'type' => 'commerce_order',
-                'label' => t('Deposit Order'),
-            ),
-        ),
-        'group' => t('Commerce Funds'),
-        'callbacks' => array(
-            'execute' => 'commerce_funds_rules_update_account_balance',
-        ),
-    );
+  $actions['commerce_funds_update_balance'] = array(
+      'label' => t('Update user account balance'),
+      'parameter' => array(
+          'commerce_order' => array(
+              'type' => 'commerce_order',
+              'label' => t('Deposit Order'),
+          ),
+      ),
+      'group' => t('Commerce Funds'),
+      'callbacks' => array(
+          'execute' => 'commerce_funds_rules_update_account_balance',
+      ),
+  );
 
-    return $actions;
+  return $actions;
 }
 
 function commerce_funds_rules_update_account_balance($order) {
 
-    if (array_key_exists('type', $order->data) && $order->data['type'] == 'commerce_funds_deposit') {
+  if (array_key_exists('type', $order->data) && $order->data['type'] == 'commerce_funds_deposit') {
 
-        global $user;
+    global $user;
 
-        $user_balance = new stdClass();
+    $user_balance = new stdClass();
 
-        $fees = variable_get('commerce_funds_fees', array());
+    $fees = variable_get('commerce_funds_fees', array());
 
-        $payment_method = explode('|', $order->data['payment_method']);
+    $payment_method = explode('|', $order->data['payment_method']);
 
-        $fee = array_key_exists($payment_method[0], $fees) ? $fees[$payment_method[0]] : 0;
-        $fee_fixed = array_key_exists($payment_method[0] . '_fixed', $fees) ? $fees[$payment_method[0] . '_fixed'] : 0;
+    $fee = array_key_exists($payment_method[0], $fees) ? $fees[$payment_method[0]] : 0;
+    $fee_fixed = array_key_exists($payment_method[0] . '_fixed', $fees) ? $fees[$payment_method[0] . '_fixed'] : 0;
 
-        $deposit_after_fee = $order->commerce_order_total['und'][0]['amount'] * (1.0 - $fee / 100.0);
-        $deposit_after_fee_fixed = $order->commerce_order_total['und'][0]['amount'] - $fee;
+    $deposit_after_fee = $order->commerce_order_total['und'][0]['amount'] * (1.0 - $fee / 100.0);
+    $deposit_after_fee_fixed = $order->commerce_order_total['und'][0]['amount'] - $fee;
 
-        $user_balance->uid = $user->uid;
-        $user_balance->balance = min(array($deposit_after_fee, $deposit_after_fee_fixed));
+    $user_balance->uid = $user->uid;
+    $user_balance->balance = min(array($deposit_after_fee, $deposit_after_fee_fixed));
 
-        $transaction = new stdClass();
+    $transaction = new stdClass();
 
-        $transaction->uid = $user->uid;
-        $transaction->reference = $order->order_id;
-        $transaction->type = 'Deposit';
-        $transaction->created = $order->changed;
-        $transaction->amount = min(array($deposit_after_fee, $deposit_after_fee_fixed));
-        $transaction->notes = array_key_exists('notes', $order->data) ? $order->data['notes'] : '';
+    $transaction->uid = $user->uid;
+    $transaction->reference = $order->order_id;
+    $transaction->type = 'Deposit';
+    $transaction->created = $order->changed;
+    $transaction->amount = min(array($deposit_after_fee, $deposit_after_fee_fixed));
+    $transaction->notes = array_key_exists('notes', $order->data) ? $order->data['notes'] : '';
 
-        $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid='$user->uid'")->fetchAssoc();
+    $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid= :uid", array(':uid' => $user->uid))->fetchAssoc();
 
-        if (!$exists) {
-            drupal_write_record('commerce_funds_user_funds', $user_balance);
-        } else {
-            $user_balance->balance += $exists['balance'];
-            drupal_write_record('commerce_funds_user_funds', $user_balance, 'uid');
-        }
-
-        drupal_write_record('commerce_funds_transactions', $transaction);
+    if (!$exists) {
+      drupal_write_record('commerce_funds_user_funds', $user_balance);
     }
+    else {
+      $user_balance->balance += $exists['balance'];
+      drupal_write_record('commerce_funds_user_funds', $user_balance, 'uid');
+    }
+
+    drupal_write_record('commerce_funds_transactions', $transaction);
+  }
 }
 
 function commerce_funds_deposit_funds_form_validate($form, &$form_state) {
 
-    if (!is_numeric($form_state['values']['amount'])) {
-        form_set_error('amount', t('Value must be Numeric'));
-        return FALSE;
-    }
+  if (!is_numeric($form_state['values']['amount'])) {
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
 
-    if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
-        form_set_error('amount', t('Value must be greater than 0'));
-        return FALSE;
-    }
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
 }
 
 function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    $deposit = commerce_product_new('deposit');
+  $deposit = commerce_product_new('deposit');
 
-    $deposit->uid = $user->uid;
-    $deposit->sku = 'deposit_' . $user->uid . '_' . $form_state['values']['amount'] . '_' . microtime();
+  $deposit->uid = $user->uid;
+  $deposit->sku = 'deposit_' . $user->uid . '_' . $form_state['values']['amount'] . '_' . microtime();
 
-    $deposit->commerce_price['und'][0]['amount'] = $form_state['values']['amount'] * 100.0;
-    $deposit->commerce_price['und'][0]['currency_code'] = commerce_default_currency();
+  $deposit->commerce_price['und'][0]['amount'] = $form_state['values']['amount'] * 100.0;
+  $deposit->commerce_price['und'][0]['currency_code'] = commerce_default_currency();
 
-    $deposit->title = 'Deposit ' . commerce_currency_format($form_state['values']['amount'] * 100.0, commerce_default_currency());
+  $deposit->title = 'Deposit ' . commerce_currency_format($form_state['values']['amount'] * 100.0, commerce_default_currency());
 
-    commerce_product_save($deposit);
+  commerce_product_save($deposit);
 
-    $deposit_order = ($user->uid) ? commerce_order_new($user->uid, 'checkout_checkout') : commerce_cart_order_new();
+  $deposit_order = ($user->uid) ? commerce_order_new($user->uid, 'checkout_checkout') : commerce_cart_order_new();
 
-    $line_item = commerce_product_line_item_new($deposit, 1, $deposit_order->order_id);
+  $line_item = commerce_product_line_item_new($deposit, 1, $deposit_order->order_id);
 
-    commerce_line_item_save($line_item);
+  commerce_line_item_save($line_item);
 
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $deposit_order);
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $deposit_order);
 
-    $order_wrapper->commerce_line_items[] = $line_item;
+  $order_wrapper->commerce_line_items[] = $line_item;
 
 
-    $deposit_order->data['type'] = 'commerce_funds_deposit';
-    $deposit_order->data['notes'] = $form_state['values']['notes'];
+  $deposit_order->data['type'] = 'commerce_funds_deposit';
+  $deposit_order->data['notes'] = $form_state['values']['notes'];
 
-    commerce_order_save($deposit_order);
+  commerce_order_save($deposit_order);
 
-    drupal_goto('checkout/' . $deposit_order->order_id);
+  drupal_goto('checkout/' . $deposit_order->order_id);
 }
 
 function commerce_funds_withdraw_funds($form, &$form_state) {
 
-    $methods = commerce_funds_get_enabled_withdrawal_methods();
-    
-    $fees = variable_get('commerce_funds_fees', array());
-    
-    foreach ($methods as $key => $method){
-        if(array_key_exists($key, $fees)){
-            $methods[$key] = $method.' ('.$fees[$key].'% Fee)';
-        }
+  $methods = commerce_funds_get_enabled_withdrawal_methods();
+
+  $fees = variable_get('commerce_funds_fees', array());
+
+  foreach ($methods as $key => $method) {
+    if (array_key_exists($key, $fees)) {
+      $methods[$key] = $method . ' (' . $fees[$key] . '% Fee)';
     }
+  }
 
-    $form['amount'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Amount to withdraw (' . commerce_default_currency() . ')'),
-        '#description' => t('Please enter the amount you wish to withdraw in ' . commerce_default_currency()),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Amount to withdraw (' . commerce_default_currency() . ')'),
+      '#description' => t('Please enter the amount you wish to withdraw in ' . commerce_default_currency()),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['methods'] = array(
-        '#type' => 'radios',
-        '#options' => $methods,
-        '#title' => t('Choose a Withdrawal method'),
-        '#default_value' => '',
-        '#required' => TRUE,
-    );
+  $form['methods'] = array(
+      '#type' => 'radios',
+      '#options' => $methods,
+      '#title' => t('Choose a Withdrawal method'),
+      '#default_value' => '',
+      '#required' => TRUE,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Submit Request'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit Request'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_withdraw_funds_validate($form, &$form_state) {
 
-    global $user;
-    
-    $fees = variable_get('commerce_funds_fees', array());
+  global $user;
 
-    $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+  $fees = variable_get('commerce_funds_fees', array());
 
-    if (!is_numeric($form_state['values']['amount'])) {
-        form_set_error('amount', t('Value must be Numeric'));
-        return FALSE;
-    }
+  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
 
-    if ($form_state['values']['amount'] * 100 > $user_balance['balance']) {
-        form_set_error('amount', t('Your available balance is ') . commerce_currency_format($user_balance['balance'], commerce_default_currency()));
-        return FALSE;
-    }
+  if (!is_numeric($form_state['values']['amount'])) {
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
 
-    if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
-        form_set_error('amount', t('Value must be greater than 0'));
-        return FALSE;
-    }
+  if ($form_state['values']['amount'] * 100 > $user_balance['balance']) {
+    form_set_error('amount', t('Your available balance is') . ' ' . commerce_currency_format($user_balance['balance'], commerce_default_currency()));
+    return FALSE;
+  }
 
-    if (!$user->data || !array_key_exists($form_state['values']['methods'], $user->data)) {
-        form_set_error('methods', t('Please ') . l(t('Enter Details'), 'user/funds/manage/withdrawal-methods/' . $form_state['values']['methods']) . t(' for this withdrawal method first'));
-        return FALSE;
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
+
+  if (!$user->data || !array_key_exists($form_state['values']['methods'], $user->data)) {
+    form_set_error('methods', t('Please') . ' ' . l(t('Enter Details'), 'user/funds/manage/withdrawal-methods/' . $form_state['values']['methods']) . ' ' . t('for this withdrawal method first'));
+    return FALSE;
+  }
+
+  if (array_key_exists($form_state['values']['methods'], $fees)) {
+
+    $amount_plus_fees = max(array((1.0 + $fees[$form_state['values']['methods']] / 100.0) * $form_state['values']['amount'] * 100, ($form_state['values']['amount'] * 100) + $fees[$form_state['values']['methods'] . '_fixed']));
+
+    if ($amount_plus_fees > $user_balance['balance']) {
+      form_set_error('amount', t('You cannot withdraw more than') . ' ' . commerce_currency_format(min(array($user_balance['balance'] * (1 - $fees[$form_state['values']['methods']] / 100.0), $user_balance['balance'] - $fees[$form_state['values']['methods'] . '_fixed'])), commerce_default_currency()) . ' ' . t('using this method'));
+      return FALSE;
     }
-    
-    if (array_key_exists($form_state['values']['methods'], $fees)) {
-        
-        $amount_plus_fees =  max(array((1.0 + $fees[$form_state['values']['methods']] / 100.0) * $form_state['values']['amount'] * 100, ($form_state['values']['amount'] * 100) + $fees[$form_state['values']['methods'].'_fixed']));
-        
-        if($amount_plus_fees > $user_balance['balance']){
-            form_set_error('amount', t('You cannot withdraw more than ') . commerce_currency_format(min(array($user_balance['balance'] * (1 - $fees[$form_state['values']['methods']] / 100.0), $user_balance['balance'] - $fees[$form_state['values']['methods'].'_fixed'])), commerce_default_currency()). t(' using this method'));
-            return FALSE;
-        }
-    }
+  }
 }
 
 function commerce_funds_withdraw_funds_submit($form, &$form_state) {
-    global $user;
+  global $user;
 
-    $request = new stdClass();
-    $request->uid = $user->uid;
-    $request->created = time();
-    $request->method = $form_state['values']['methods'];
-    $request->amount = $form_state['values']['amount'] * 100;
-    $request->status = 'Pending Approval';
+  $request = new stdClass();
+  $request->uid = $user->uid;
+  $request->created = time();
+  $request->method = $form_state['values']['methods'];
+  $request->amount = $form_state['values']['amount'] * 100;
+  $request->status = 'Pending Approval';
 
-    drupal_write_record('commerce_funds_withdraw_requests', $request);
+  drupal_write_record('commerce_funds_withdraw_requests', $request);
 
-    drupal_set_message(t('Your Withdrawal Request has been sent and will be processed in due order'), 'status');
+  drupal_set_message(t('Your Withdrawal Request has been sent and will be processed in due order'), 'status');
 
-    drupal_goto('user');
+  drupal_goto('user');
 }
 
 function commerce_funds_transfer_funds() {
-    return drupal_get_form('commerce_funds_transfer_funds_form');
+  return drupal_get_form('commerce_funds_transfer_funds_form');
 }
 
 function commerce_funds_escrow_payment() {
-    return drupal_get_form('commerce_funds_escrow_payment_form');
+  return drupal_get_form('commerce_funds_escrow_payment_form');
 }
 
 function commerce_funds_escrow_payment_form($form, &$form_state) {
 
-    $form['amount'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Amount to put in Escrow (' . commerce_default_currency() . ')'),
-        '#description' => t('Please enter the amount you wish to assign as an escrow payment in ' . commerce_default_currency()),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Amount to put in Escrow (' . commerce_default_currency() . ')'),
+      '#description' => t('Please enter the amount you wish to assign as an escrow payment in ' . commerce_default_currency()),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['email'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Allocated To'),
-        '#description' => t('Please enter the email of the user you want to allocate the escrow payment to'),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Allocated To'),
+      '#description' => t('Please enter the email of the user you want to allocate the escrow payment to'),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['notes'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Notes'),
-        '#description' => '',
-    );
+  $form['notes'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Notes'),
+      '#description' => '',
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Allocate Funds'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Allocate Funds'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_escrow_payment_form_validate($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    if (!is_numeric($form_state['values']['amount'])) {
-        form_set_error('amount', t('Value must be Numeric'));
-        return FALSE;
-    }
+  if (!is_numeric($form_state['values']['amount'])) {
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
 
-    if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
-        form_set_error('amount', t('Value must be greater than 0'));
-        return FALSE;
-    }
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
 
-    if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
-        form_set_error('email', t('Please enter a valid email'));
-        return FALSE;
-    }
+  if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
+    form_set_error('email', t('Please enter a valid email'));
+    return FALSE;
+  }
 
-    $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+  $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
 
-    if (!$exists) {
-        form_set_error('email', t('We have no record of users with the email ') . $form_state['values']['email']);
-        return FALSE;
-    }
+  if (!$exists) {
+    form_set_error('email', t('We have no record of users with the email') . ' ' . $form_state['values']['email']);
+    return FALSE;
+  }
 
-    $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
 
-    if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
-        form_set_error('amount', t("You don't have enough funds to cover this transfer"));
-        return FALSE;
-    }
+  if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
+    form_set_error('amount', t("You don't have enough funds to cover this transfer"));
+    return FALSE;
+  }
 }
 
 function commerce_funds_escrow_payment_form_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    $from_user = $user;
-    $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+  $from_user = $user;
+  $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
 
-    $transfer_amount = intval($form_state['values']['amount'] * 100.0);
+  $transfer_amount = intval($form_state['values']['amount'] * 100.0);
 
-    $transaction = new stdClass();
+  $transaction = new stdClass();
 
-    $transaction->uid = $from_user->uid;
-    $transaction->type = 'Escrow Payment';
-    $transaction->reference = $to_user['uid'];
-    $transaction->created = time();
-    $transaction->amount = $transfer_amount;
-    $transaction->notes = $form_state['values']['notes'];
+  $transaction->uid = $from_user->uid;
+  $transaction->type = 'Escrow Payment';
+  $transaction->reference = $to_user['uid'];
+  $transaction->created = time();
+  $transaction->amount = $transfer_amount;
+  $transaction->notes = $form_state['values']['notes'];
 
-    $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
-    $from_user_balance['balance'] -= $transfer_amount;
+  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
+  $from_user_balance['balance'] -= $transfer_amount;
 
-    $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
+  $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
 
-    if (!$exists) {
-        $user_balance = new stdClass();
-        $user_balance->uid = $to_user['uid'];
-        $user_balance->balance = 0;
-        drupal_write_record('commerce_funds_user_funds', $user_balance);
-    }
+  if (!$exists) {
+    $user_balance = new stdClass();
+    $user_balance->uid = $to_user['uid'];
+    $user_balance->balance = 0;
+    drupal_write_record('commerce_funds_user_funds', $user_balance);
+  }
 
-    drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
-    drupal_write_record('commerce_funds_transactions', $transaction);
+  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
+  drupal_write_record('commerce_funds_transactions', $transaction);
 
-    drupal_set_message('Escrow Payment Created Successfully', 'status');
+  drupal_set_message(t('Escrow Payment Created Successfully'), 'status');
 }
 
 function commerce_funds_transfer_funds_form($form, &$form_state) {
 
-    $form['amount'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Amount to transfer (' . commerce_default_currency() . ')'),
-        '#description' => t('Please enter the amount you wish to transfer in ' . commerce_default_currency()),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Amount to transfer (' . commerce_default_currency() . ')'),
+      '#description' => t('Please enter the amount you wish to transfer in ' . commerce_default_currency()),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['email'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Transfer To'),
-        '#description' => t('Please enter the email of the user you want to transfer the funds to'),
-        '#default_value' => '',
-        '#size' => 30,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Transfer To'),
+      '#description' => t('Please enter the email of the user you want to transfer the funds to'),
+      '#default_value' => '',
+      '#size' => 30,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['notes'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Notes'),
-        '#description' => '',
-    );
+  $form['notes'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Notes'),
+      '#description' => '',
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Transfer Funds'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Transfer Funds'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_transfer_funds_form_validate($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    if (!is_numeric($form_state['values']['amount'])) {
-        form_set_error('amount', t('Value must be Numeric'));
-        return FALSE;
-    }
+  if (!is_numeric($form_state['values']['amount'])) {
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
 
-    if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
-        form_set_error('amount', t('Value must be greater than 0'));
-        return FALSE;
-    }
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
 
-    if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
-        form_set_error('email', t('Please enter a valid email'));
-        return FALSE;
-    }
+  if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
+    form_set_error('email', t('Please enter a valid email'));
+    return FALSE;
+  }
 
-    $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+  $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
 
-    if (!$exists) {
-        form_set_error('email', t('We have no record of users with the email ') . $form_state['values']['email']);
-        return FALSE;
-    }
+  if (!$exists) {
+    form_set_error('email', t('We have no record of users with the email') . ' ' . $form_state['values']['email']);
+    return FALSE;
+  }
 
-    $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
 
-    if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
-        form_set_error('amount', t("You don't have enough funds to cover this transfer"));
-        return FALSE;
-    }
+  if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
+    form_set_error('amount', t("You don't have enough funds to cover this transfer"));
+    return FALSE;
+  }
 }
 
 function commerce_funds_transfer_funds_form_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    $from_user = $user;
-    $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+  $from_user = $user;
+  $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
 
-    $fees = variable_get('commerce_funds_fees', array());
+  $fees = variable_get('commerce_funds_fees', array());
 
-    $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
-    $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
+  $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
+  $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
 
-    $transfer_amount = intval($form_state['values']['amount'] * 100.0);
+  $transfer_amount = intval($form_state['values']['amount'] * 100.0);
 
-    $transfer_after_fee = $transfer_amount * (1.0 - $fee / 100.0);
-    $transfer_after_fee_fixed = $transfer_amount - $fee;
+  $transfer_after_fee = $transfer_amount * (1.0 - $fee / 100.0);
+  $transfer_after_fee_fixed = $transfer_amount - $fee;
 
-    $transaction = new stdClass();
+  $transaction = new stdClass();
 
-    $transaction->uid = $from_user->uid;
-    $transaction->type = 'Transfer';
-    $transaction->reference = $to_user['uid'];
-    $transaction->created = time();
-    $transaction->amount = $transfer_amount;
-    $transaction->notes = $form_state['values']['notes'];
+  $transaction->uid = $from_user->uid;
+  $transaction->type = 'Transfer';
+  $transaction->reference = $to_user['uid'];
+  $transaction->created = time();
+  $transaction->amount = $transfer_amount;
+  $transaction->notes = $form_state['values']['notes'];
 
-    $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
-    $from_user_balance['balance'] -= $transfer_amount;
+  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
+  $from_user_balance['balance'] -= $transfer_amount;
 
-    $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
+  $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
 
-    if (!$exists) {
-        $user_balance = new stdClass();
-        $user_balance->uid = $to_user['uid'];
-        $user_balance->balance = 0;
-        drupal_write_record('commerce_funds_user_funds', $user_balance);
-    }
+  if (!$exists) {
+    $user_balance = new stdClass();
+    $user_balance->uid = $to_user['uid'];
+    $user_balance->balance = 0;
+    drupal_write_record('commerce_funds_user_funds', $user_balance);
+  }
 
-    $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
-    $to_user_balance['balance'] += min(array($transfer_after_fee, $transfer_after_fee_fixed));
+  $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
+  $to_user_balance['balance'] += min(array($transfer_after_fee, $transfer_after_fee_fixed));
 
-    drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
-    drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
-    drupal_write_record('commerce_funds_transactions', $transaction);
+  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
+  drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
+  drupal_write_record('commerce_funds_transactions', $transaction);
 
-    drupal_set_message('Transfer Successful', 'status');
+  drupal_set_message(t('Transfer Successful'), 'status');
 }
 
 function commerce_funds_configure_withdraw_methods() {
-    return drupal_get_form('commerce_funds_configure_withdraw_methods_form');
+  return drupal_get_form('commerce_funds_configure_withdraw_methods_form');
 }
 
 function commerce_funds_configure_withdraw_methods_form($form, &$form_state) {
 
-    $methods = commerce_funds_get_withdrawal_methods();
+  $methods = commerce_funds_get_withdrawal_methods();
 
-    $values = variable_get('commerce_funds_withdrawal_methods', array());
+  $values = variable_get('commerce_funds_withdrawal_methods', array());
 
-    $form['methods'] = array(
-        '#type' => 'checkboxes',
-        '#options' => $methods,
-        '#default_value' => $values,
-        '#title' => t('Choose Payment methods allowed for withdrawals'),
-        '#required' => TRUE,
-    );
+  $form['methods'] = array(
+      '#type' => 'checkboxes',
+      '#options' => $methods,
+      '#default_value' => $values,
+      '#title' => t('Choose Payment methods allowed for withdrawals'),
+      '#required' => TRUE,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save Configurations'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save Configurations'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_configure_withdraw_methods_form_submit($form, &$form_state) {
-    variable_set('commerce_funds_withdrawal_methods', $form_state['values']['methods']);
+  variable_set('commerce_funds_withdrawal_methods', $form_state['values']['methods']);
 }
 
 function commerce_funds_manage_withdrawal_methods() {
 
-    $methods = commerce_funds_get_enabled_withdrawal_methods();
+  $methods = commerce_funds_get_enabled_withdrawal_methods();
 
-    foreach ($methods as $key => $value) {
-        $methods[$key] = l($methods[$key], 'user/funds/manage/withdrawal-methods/' . $key);
-    }
+  foreach ($methods as $key => $value) {
+    $methods[$key] = l($methods[$key], 'user/funds/manage/withdrawal-methods/' . $key);
+  }
 
-    return theme('item_list', array('items' => $methods, 'type' => 'ul'));
+  return theme('item_list', array('items' => $methods, 'type' => 'ul'));
 }
 
 function commerce_funds_manage_withdrawal_method_paypal($form, &$form_state) {
 
-    $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
+  $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
 
-    if (!$enabled_methods['paypal'])
-        return FALSE;
+  if (!$enabled_methods['paypal'])
+    return FALSE;
 
-    global $user;
+  global $user;
 
-    $form['paypal_email'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Paypal Email'),
-        '#description' => t('Withdrawals using Paypal will be sent to this email'),
-        '#default_value' => $user->data && array_key_exists('paypal', $user->data) ? $user->data['paypal']['paypal_email'] : '',
-        '#size' => 40,
-        '#maxlength' => 64,
-        '#required' => TRUE,
-    );
+  $form['paypal_email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Paypal Email'),
+      '#description' => t('Withdrawals using Paypal will be sent to this email'),
+      '#default_value' => $user->data && array_key_exists('paypal', $user->data) ? $user->data['paypal']['paypal_email'] : '',
+      '#size' => 40,
+      '#maxlength' => 64,
+      '#required' => TRUE,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_manage_withdrawal_method_paypal_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    user_save($user, array('data' => array('paypal' => $form_state['values'])));
+  user_save($user, array('data' => array('paypal' => $form_state['values'])));
 }
 
 function commerce_funds_manage_withdrawal_method_skrill($form, &$form_state) {
 
-    $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
+  $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
 
-    if (!$enabled_methods['skrill'])
-        return FALSE;
+  if (!$enabled_methods['skrill'])
+    return FALSE;
 
-    global $user;
+  global $user;
 
-    $form['skrill_email'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Skrill Email'),
-        '#description' => t('Withdrawals using Skrill will be sent to this email'),
-        '#default_value' => $user->data && array_key_exists('skrill', $user->data) ? $user->data['skrill']['skrill_email'] : '',
-        '#size' => 40,
-        '#maxlength' => 64,
-        '#required' => TRUE,
-    );
+  $form['skrill_email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Skrill Email'),
+      '#description' => t('Withdrawals using Skrill will be sent to this email'),
+      '#default_value' => $user->data && array_key_exists('skrill', $user->data) ? $user->data['skrill']['skrill_email'] : '',
+      '#size' => 40,
+      '#maxlength' => 64,
+      '#required' => TRUE,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_manage_withdrawal_method_skrill_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    user_save($user, array('data' => array('skrill' => $form_state['values'])));
+  user_save($user, array('data' => array('skrill' => $form_state['values'])));
 }
 
 function commerce_funds_manage_withdrawal_method_bank_account($form, &$form_state) {
 
-    include_once DRUPAL_ROOT . '/includes/locale.inc';
+  include_once DRUPAL_ROOT . '/includes/locale.inc';
 
-    $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
+  $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
 
-    if (!$enabled_methods['bank_account'])
-        return FALSE;
+  if (!$enabled_methods['bank_account'])
+    return FALSE;
 
-    global $user;
+  global $user;
 
-    $form['account_name'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Name of Account Holder'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['account_name'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['account_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Name of Account Holder'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['account_name'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['account_number'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Account Number / IBAN'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['account_number'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['account_number'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Account Number / IBAN'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['account_number'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_name'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank Name'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_name'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['bank_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank Name'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_name'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_country'] = array(
-        '#type' => 'select',
-        '#title' => t('Bank Country'),
-        '#options' => country_get_list(),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_country'] : '',
-        '#description' => t(''),
-        '#required' => TRUE,
-    );
+  $form['bank_country'] = array(
+      '#type' => 'select',
+      '#title' => t('Bank Country'),
+      '#options' => country_get_list(),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_country'] : '',
+      '#description' => t(''),
+      '#required' => TRUE,
+  );
 
-    $form['swift_code'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Swift Code'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['swift_code'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['swift_code'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Swift Code'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['swift_code'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_address'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank Address'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_address'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['bank_address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank Address'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_address'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_address2'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank Address 2'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_address2'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-    );
+  $form['bank_address2'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank Address 2'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_address2'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+  );
 
-    $form['bank_city'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank City'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_city'] : '',
-        '#size' => 20,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['bank_city'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank City'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_city'] : '',
+      '#size' => 20,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_province'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank Province'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_province'] : '',
-        '#size' => 20,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['bank_province'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank Province'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_province'] : '',
+      '#size' => 20,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['bank_postalcode'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Bank Postal Code'),
-        '#description' => t(''),
-        '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_postalcode'] : '',
-        '#size' => 20,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['bank_postalcode'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Bank Postal Code'),
+      '#description' => t(''),
+      '#default_value' => $user->data && array_key_exists('bank_account', $user->data) ? $user->data['bank_account']['bank_postalcode'] : '',
+      '#size' => 20,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_manage_withdrawal_method_bank_account_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    user_save($user, array('data' => array('bank_account' => $form_state['values'])));
+  user_save($user, array('data' => array('bank_account' => $form_state['values'])));
 }
 
 function commerce_funds_manage_withdrawal_method_check($form, &$form_state) {
 
-    $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
+  $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
 
-    if (!$enabled_methods['check'])
-        return FALSE;
+  if (!$enabled_methods['check'])
+    return FALSE;
 
-    global $user;
+  global $user;
 
-    $form['check_name'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Full Name'),
-        '#description' => t('Full Name to write the Check to'),
-        '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_name'] : '',
-        '#size' => 40,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['check_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Full Name'),
+      '#description' => t('Full Name to write the Check to'),
+      '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_name'] : '',
+      '#size' => 40,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['check_address'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Address'),
-        '#description' => t('Detailed address to send the check to'),
-        '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_address'] : '',
-        '#size' => 60,
-        '#maxlength' => 128,
-        '#required' => TRUE,
-    );
+  $form['check_address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address'),
+      '#description' => t('Detailed address to send the check to'),
+      '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_address'] : '',
+      '#size' => 60,
+      '#maxlength' => 128,
+      '#required' => TRUE,
+  );
 
-    $form['check_address2'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Address 2'),
-        '#description' => t('Detailed address to send the check to'),
-        '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_address2'] : '',
-        '#size' => 60,
-        '#maxlength' => 128,
-    );
+  $form['check_address2'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address 2'),
+      '#description' => t('Detailed address to send the check to'),
+      '#default_value' => $user->data && array_key_exists('check', $user->data) ? $user->data['check']['check_address2'] : '',
+      '#size' => 60,
+      '#maxlength' => 128,
+  );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save'),
-    );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+  );
 
-    return $form;
+  return $form;
 }
 
 function commerce_funds_manage_withdrawal_method_check_submit($form, &$form_state) {
 
-    global $user;
+  global $user;
 
-    user_save($user, array('data' => array('check' => $form_state['values'])));
+  user_save($user, array('data' => array('check' => $form_state['values'])));
 }
 
 function commerce_funds_get_enabled_withdrawal_methods() {
 
-    $methods = commerce_funds_get_withdrawal_methods();
+  $methods = commerce_funds_get_withdrawal_methods();
 
-    $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
+  $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
 
-    foreach ($enabled_methods as $key => $value) {
-        if (!$value)
-            unset($methods[$key]);
-    }
+  foreach ($enabled_methods as $key => $value) {
+    if (!$value)
+      unset($methods[$key]);
+  }
 
-    return $methods;
+  return $methods;
 }
 
 function commerce_funds_get_withdrawal_methods() {
 
-    $methods = array(
-        'paypal' => 'Paypal',
-        'skrill' => 'Skrill',
-        'bank_account' => 'Bank Account',
-        'check' => 'Check'
-    );
+  $methods = array(
+      'paypal' => 'Paypal',
+      'skrill' => 'Skrill',
+      'bank_account' => 'Bank Account',
+      'check' => 'Check'
+  );
 
-    return $methods;
+  return $methods;
 }
 
 function commerce_funds_mail($key, &$message, $params) {
 
-    $message['headers']['MIME-Version'] = '1.0';
-    $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
-    $message['headers']['Content-Transfer-Encoding'] = '8Bit';
+  $message['headers']['MIME-Version'] = '1.0';
+  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+  $message['headers']['Content-Transfer-Encoding'] = '8Bit';
 
-    if ($key == 'escrow_cancel_from') {
-        $message['subject'] = token_replace('Escrow Payment at [site:name] was Cancelled');
-        $message['body'][] = theme('escrow_cancel_from', array('transaction' => $params['transaction']));
-        
-    } elseif ($key == 'escrow_cancel_to') {
-        
-        $message['subject'] = token_replace('Escrow Payment at [site:name] was Cancelled');
-        $message['body'][] = theme('escrow_cancel_to', array('transaction' => $params['transaction']));
-        
-    }
-    
+  if ($key == 'escrow_cancel_from') {
+    $message['subject'] = token_replace('Escrow Payment at [site:name] was Cancelled');
+    $message['body'][] = theme('escrow_cancel_from', array('transaction' => $params['transaction']));
+  }
+  elseif ($key == 'escrow_cancel_to') {
+
+    $message['subject'] = token_replace('Escrow Payment at [site:name] was Cancelled');
+    $message['body'][] = theme('escrow_cancel_to', array('transaction' => $params['transaction']));
+  }
 }

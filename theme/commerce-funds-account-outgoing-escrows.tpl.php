@@ -1,4 +1,8 @@
 <?php
+/**
+* @file
+* Definition of commerce-funds-account-outgoing-escrows.tpl.php.
+*/
 $user = user_load($variables['uid']);
 
 global $base_url;

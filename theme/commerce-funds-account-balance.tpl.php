@@ -1,5 +1,8 @@
 <?php
-
+/**
+* @file
+* Definition of commerece-funds-account-balance.tpl.php.
+*/
 $user = user_load($variables['uid']);
 
 $balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid='$user->uid'")->fetchAssoc();
