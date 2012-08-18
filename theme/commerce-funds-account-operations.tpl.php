@@ -14,7 +14,7 @@ $user = user_load($variables['uid']);
 
     <?php } ?>
         
-    <?php if (user_access('withdraw funds', $user)) { ?>
+    <?php if (user_access('transfer funds', $user)) { ?>
 
         <li><a href="<?php print $base_url . '/user/funds/transfer'; ?>">Transfer Funds</a></li>
 
@@ -26,7 +26,7 @@ $user = user_load($variables['uid']);
 
     <?php } ?>
         
-    <?php if (user_access('transfer funds', $user)) { ?>
+    <?php if (user_access('withdraw funds', $user)) { ?>
 
         <li><a href="<?php print $base_url . '/user/funds/withdraw'; ?>">Withdraw Funds</a></li>
 
