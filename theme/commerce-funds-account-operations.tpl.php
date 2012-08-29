@@ -32,7 +32,7 @@ $user = user_load($variables['uid']);
 
    <?php } ?>
 
-   <?php if (user_access('view own transactions', $user)) { ?>
+   <?php if (user_access('manage own escrow payment', $user)) { ?>
 
         <li><a href="<?php print $base_url . '/user/funds/escrow-payments'; ?>">Manage Escrow Payments</a></li>
 
@@ -46,13 +46,13 @@ $user = user_load($variables['uid']);
         
   <?php if (user_access('withdraw funds', $user)) { ?>
 
-        <li><a href="<?php print $base_url . '/user/funds/withdrawals'; ?>">View Withdrawal requests</a></li>
+        <li><a href="<?php print $base_url . '/user/funds/withdrawals'; ?>">Withdrawal Requests</a></li>
 
    <?php } ?>
 
    <?php if (user_access('view own transactions', $user)) { ?>
 
-        <li><a href="<?php print $base_url . '/user/funds/transactions'; ?>">View All Transactions</a></li>
+        <li><a href="<?php print $base_url . '/user/funds/transactions'; ?>">View Transactions</a></li>
 
    <?php } ?>
 </ul>

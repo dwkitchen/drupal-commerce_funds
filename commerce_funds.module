@@ -293,6 +293,10 @@ function commerce_funds_permission() {
           'description' => 'Gives users permission to administer all funds operations',
           'restrict access' => TRUE,
       ),
+      'manage own escrow payment' => array(
+          'title' => 'Manage Own Escrow Payment',
+          'description' => t('Allow users to manage escrow payments'),
+      ),
   );
 }
 
@@ -379,7 +383,7 @@ function commerce_funds_menu() {
   $items['user/funds/escrow-payments'] = array(
       'title' => 'Escrow Payments',
       'page callback' => 'commerce_funds_get_user_escrow_payments',
-      'access arguments' => array('view own transactions'),
+      'access arguments' => array('manage own escrow payment'),
       'type' => MENU_CALLBACK,
   );
 
