@@ -1,13 +1,12 @@
 <?php
 
-
 /**
  *  Implementation of hook_views_api().
  */
 function commerce_funds_views_api() {
-  return array (
-    'api' => 3,
-    'path' => drupal_get_path('module', 'commerce_funds'),    
+  return array(
+      'api' => 3,
+      'path' => drupal_get_path('module', 'commerce_funds'),
   );
 }
 
@@ -15,249 +14,252 @@ function commerce_funds_views_api() {
  * Implementation of hook_views_data()
  */
 function commerce_funds_views_data() {
-  $data = array ();
-     
-    $data['commerce_funds_transactions']['table'] = array (
-    'group' => t("User Transactions"),
-    'title' => t("User Transactions"),
-    'help' => t(""),
+  $data = array();
+
+  $data['commerce_funds_transactions']['table'] = array(
+      'group' => t("User Transactions"),
+      'title' => t("User Transactions"),
+      'help' => t(""),
   );
-  $data['commerce_funds_transactions']['table']['base'] = array (
-                'field' => 'transaction_id',
-                'title' => 'Funds Transactions',
-                'help' => t(""),
-                'weight' => 10,
-  ); 
-  
-  $data['commerce_funds_transactions']['uid'] = array(
-    'title' => t('User Uid'), 
-    'help' => t('The User ID.'),
-    'relationship' => array(
-      'base' => 'users',
-      'field' => 'uid',
-      'handler' => 'views_handler_relationship', 
-      'label' => t('Example user'),
-    ),
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_user_current',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
-  );
-  
-   $data['commerce_funds_transactions']['reference'] = array(
-    'title' => t('Special Reference data'), 
-    'help' => t('In case of a transfer transaction this field will hold the user id of the destination user, same for escrow payment transactions.'),
-    'relationship' => array(
-      'base' => 'user',
-      'field' => 'uid',
-      'handler' => 'views_handler_relationship', 
-      'label' => t('User Reference'),
-    ),
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'views_handler_filter_user_current',
-    ),
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
-  );
-   
-   $data['commerce_funds_transactions']['created'] = array(
-    'title' => t('Created On'), 
-    'help' => t('Time of creation.'), 
-    'field' => array(
-      'handler' => 'views_handler_field_date', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_field_date',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
-  );
-   
-   $data['commerce_funds_transactions']['amount'] = array(
-    'title' => t('Transaction Amount'), 
-    'help' => t('The transaction amount.'), 
-    'field' => array(
-      'handler' => 'views_handler_field_numeric', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_numeric',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
-  );
-   
-   $data['commerce_funds_transactions']['type'] = array(
-    'title' => t('Transaction Type'), 
-    'help' => t('The transaction type.'), 
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ), 
-    'filter' => array(
-      'handler' => 'commerce_funds_type_views_handler_filter_in_operator',
-    ), 
-    'argument' => array(
-      'handler' => 'views_handler_argument_string',
-    ),
-  );
-   
-   $data['commerce_funds_transactions']['notes'] = array(
-    'title' => t('Notes'), 
-    'help' => t('Comments.'), 
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_string',
-    ), 
-    'argument' => array(
-      'handler' => 'views_handler_argument_string',
-    ),
+  $data['commerce_funds_transactions']['table']['base'] = array(
+      'field' => 'transaction_id',
+      'title' => 'Funds Transactions',
+      'help' => t(""),
+      'weight' => 10,
   );
 
-    $data['commerce_funds_withdraw_requests']['table'] = array (
-    'group' => t("Withdraw Requests"),
-    'title' => t("Withdraw Requests"),
-    'help' => t(""),
+  $data['commerce_funds_transactions']['uid'] = array(
+      'title' => t('User Uid'),
+      'help' => t('The User ID.'),
+      'relationship' => array(
+          'base' => 'users',
+          'field' => 'uid',
+          'handler' => 'views_handler_relationship',
+          'label' => t('Example user'),
+      ),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_user_current',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
   );
-  $data['commerce_funds_withdraw_requests']['table']['base'] = array (
-                'field' => 'request_id',
-                'title' => 'Withdraw Requests',
-                'help' => t(""),
-                'weight' => 10,
-  ); 
-  
+
+  $data['commerce_funds_transactions']['reference'] = array(
+      'title' => t('Special Reference data'),
+      'help' => t('In case of a transfer transaction this field will hold the user id of the destination user, same for escrow payment transactions.'),
+      'relationship' => array(
+          'base' => 'user',
+          'field' => 'uid',
+          'handler' => 'views_handler_relationship',
+          'label' => t('User Reference'),
+      ),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_user_current',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+  );
+
+  $data['commerce_funds_transactions']['created'] = array(
+      'title' => t('Created On'),
+      'help' => t('Time of creation.'),
+      'field' => array(
+          'handler' => 'views_handler_field_date',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_field_date',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+  );
+
+  $data['commerce_funds_transactions']['amount'] = array(
+      'title' => t('Transaction Amount'),
+      'help' => t('The transaction amount.'),
+      'field' => array(
+          'handler' => 'views_handler_field_numeric',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_numeric',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+  );
+
+  $data['commerce_funds_transactions']['type'] = array(
+      'title' => t('Transaction Type'),
+      'help' => t('The transaction type.'),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+          'handler' => 'commerce_funds_type_views_handler_filter_in_operator',
+      ),
+      'argument' => array(
+          'handler' => 'views_handler_argument_string',
+      ),
+  );
+
+  $data['commerce_funds_transactions']['notes'] = array(
+      'title' => t('Notes'),
+      'help' => t('Comments.'),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_string',
+      ),
+      'argument' => array(
+          'handler' => 'views_handler_argument_string',
+      ),
+  );
+
+  $data['commerce_funds_withdraw_requests']['table'] = array(
+      'group' => t("Withdraw Requests"),
+      'title' => t("Withdraw Requests"),
+      'help' => t(""),
+  );
+  $data['commerce_funds_withdraw_requests']['table']['base'] = array(
+      'field' => 'request_id',
+      'title' => 'Withdraw Requests',
+      'help' => t(""),
+      'weight' => 10,
+  );
+
   $data['commerce_funds_withdraw_requests']['uid'] = array(
-    'title' => t('User Uid'), 
-    'help' => t('The user ID.'),
-    'relationship' => array(
-      'base' => 'users',
-      'field' => 'uid',
-      'handler' => 'views_handler_relationship', 
-      'label' => t('User ID'),
-    ),
-    'field' => array(
-      'handler' => 'views_handler_field_numeric', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_user_current',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
+      'title' => t('User Uid'),
+      'help' => t('The user ID.'),
+      'relationship' => array(
+          'base' => 'users',
+          'field' => 'uid',
+          'handler' => 'views_handler_relationship',
+          'label' => t('User ID'),
+      ),
+      'field' => array(
+          'handler' => 'views_handler_field_numeric',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_user_current',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
   );
-  
-   $data['commerce_funds_withdraw_requests']['created'] = array(
-    'title' => t('Created On'), 
-    'help' => t('Time of creation.'), 
-    'field' => array(
-      'handler' => 'views_handler_field_date', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_field_date',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
+
+  $data['commerce_funds_withdraw_requests']['created'] = array(
+      'title' => t('Created On'),
+      'help' => t('Time of creation.'),
+      'field' => array(
+          'handler' => 'views_handler_field_date',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_field_date',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
   );
-   
-   $data['commerce_funds_withdraw_requests']['method'] = array(
-    'title' => t('Withdraw Method'), 
-    'help' => t('The Withdraw Method.'), 
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_string',
-    ), 
-    'argument' => array(
-      'handler' => 'views_handler_argument_string',
-    ),
+
+  $data['commerce_funds_withdraw_requests']['method'] = array(
+      'title' => t('Withdraw Method'),
+      'help' => t('The Withdraw Method.'),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_string',
+      ),
+      'argument' => array(
+          'handler' => 'views_handler_argument_string',
+      ),
   );
-   
-   $data['commerce_funds_withdraw_requests']['amount'] = array(
-    'title' => t('Withdraw Amount'), 
-    'help' => t('The Amount of withdraw.'), 
-    'field' => array(
-      'handler' => 'views_handler_field_numeric', 
-      'click sortable' => TRUE,
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_numeric',
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
+
+  $data['commerce_funds_withdraw_requests']['amount'] = array(
+      'title' => t('Withdraw Amount'),
+      'help' => t('The Amount of withdraw.'),
+      'field' => array(
+          'handler' => 'views_handler_field_numeric',
+          'click sortable' => TRUE,
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_numeric',
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
   );
-   
-   $data['commerce_funds_withdraw_requests']['status'] = array(
-    'title' => t('Withdraw Status'), 
-    'help' => t('Withdraw Status.'), 
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ), 
-    'filter' => array(
-      'handler' => 'commerce_funds_status_views_handler_filter_in_operator',
-    ), 
-    'argument' => array(
-      'handler' => 'views_handler_argument_string',
-    ),
+
+  $data['commerce_funds_withdraw_requests']['status'] = array(
+      'title' => t('Withdraw Status'),
+      'help' => t('Withdraw Status.'),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+          'handler' => 'commerce_funds_status_views_handler_filter_in_operator',
+      ),
+      'argument' => array(
+          'handler' => 'views_handler_argument_string',
+      ),
   );
-   
-   $data['commerce_funds_withdraw_requests']['notes'] = array(
-    'title' => t('Notes'), 
-    'help' => t('Comments.'), 
-    'field' => array(
-      'handler' => 'views_handler_field', 
-      'click sortable' => TRUE,
-    ), 
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ), 
-    'filter' => array(
-      'handler' => 'views_handler_filter_string',
-    ), 
-    'argument' => array(
-      'handler' => 'views_handler_argument_string',
-    ),
+
+  $data['commerce_funds_withdraw_requests']['notes'] = array(
+      'title' => t('Notes'),
+      'help' => t('Comments.'),
+      'field' => array(
+          'handler' => 'views_handler_field',
+          'click sortable' => TRUE,
+      ),
+      'sort' => array(
+          'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+          'handler' => 'views_handler_filter_string',
+      ),
+      'argument' => array(
+          'handler' => 'views_handler_argument_string',
+      ),
   );
-   
-   
-     return $data;
+
+
+  return $data;
 }
 
+/**
+ * Implements hook_permission().
+ */
 function commerce_funds_permission() {
   return array(
       'view own transactions' => array(
@@ -300,6 +302,9 @@ function commerce_funds_permission() {
   );
 }
 
+/**
+ * Implements hook_menu().
+ */
 function commerce_funds_menu() {
 
   $items['admin/commerce/funds'] = array(
@@ -604,6 +609,9 @@ function commerce_funds_release_escrow_payment_submit($form, &$form_state) {
   drupal_goto('user/funds/escrow-payments');
 }
 
+/**
+ * Implements hook_commerce_product_type_info().
+ */
 function commerce_funds_commerce_product_type_info() {
 
   return array(
@@ -930,6 +938,9 @@ function commerce_funds_configure_fees_form_submit($form, &$form_state) {
   variable_set('commerce_funds_fees', $fees);
 }
 
+/**
+ * Implements hook_block_info().
+ */
 function commerce_funds_block_info() {
   $blocks['account_balance'] = array(
       'info' => t('Account Balance'),
@@ -944,6 +955,9 @@ function commerce_funds_block_info() {
   return $blocks;
 }
 
+/**
+ * Implements hook_block_view().
+ */
 function commerce_funds_block_view($delta = '') {
 
   $block = array();
@@ -962,6 +976,9 @@ function commerce_funds_block_view($delta = '') {
   return $block;
 }
 
+/**
+ * Implements hook_theme().
+ */
 function commerce_funds_theme() {
   return array(
       'account_balance' => array(
@@ -1054,6 +1071,9 @@ function commerce_funds_deposit_funds_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Implements hook_default_rules_configuration().
+ */
 function commerce_funds_default_rules_configuration() {
 
   $rules = array();
@@ -1072,6 +1092,9 @@ function commerce_funds_default_rules_configuration() {
   return $rules;
 }
 
+/**
+ * Implements hook_rules_action_info().
+ */
 function commerce_funds_rules_action_info() {
   $actions = array();
 
@@ -1822,6 +1845,9 @@ function commerce_funds_get_withdrawal_methods() {
   return $methods;
 }
 
+/**
+ * Implements hook_mail().
+ */
 function commerce_funds_mail($key, &$message, $params) {
 
   $message['headers']['MIME-Version'] = '1.0';

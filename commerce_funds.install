@@ -4,11 +4,16 @@
  * @file
  * Install, and uninstall functions for the commerce_funds module.
  */
+
+/**
+ * Implements hook_enable().
+ */
 function commerce_funds_enable() {
   drupal_static_reset();
   commerce_product_configure_product_types();
   $payment_methods = commerce_payment_methods();
 }
+
 /**
  * Implements hook_schema().
  */
