@@ -1,17 +1,18 @@
 name =  Commerce Funds
 description = Drupal funds management system
 core = 7.x
-dependencies[] = commerce
-dependencies[] = commerce_ui
-dependencies[] = commerce_product
-dependencies[] = commerce_cart
-dependencies[] = commerce_order
-dependencies[] = commerce_order_ui
-dependencies[] = commerce_payment
-dependencies[] = commerce_checkout
-dependencies[] = commerce_line_item_ui
-dependencies[] = commerce_customer_ui
 
-files[] = commerce_funds_type_views_handler_filter_in_operator.inc
-files[] = commerce_funds_status_views_handler_filter_in_operator.inc
-package = "Commerce"
+dependencies[] = commerce_payment
+dependencies[] = rules
+
+
+; Module includes
+files[] = commerce_funds.rules.inc
+files[] = includes/commerce_funds_transaction.controller.inc
+files[] = includes/commerce_funds_account.controller.inc
+
+; Views handlers
+files[] = includes/views/handlers/commerce_funds_type_views_handler_filter_in_operator.inc
+files[] = includes/views/handlers/commerce_funds_status_views_handler_filter_in_operator.inc
+
+package = Commerce Funds

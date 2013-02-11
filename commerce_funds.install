@@ -5,139 +5,120 @@
  * Install, and uninstall functions for the commerce_funds module.
  */
 
-/**
- * Implements hook_enable().
- */
-function commerce_funds_enable() {
-  drupal_static_reset();
-  commerce_product_configure_product_types();
-  $payment_methods = commerce_payment_methods();
-}
 
 /**
  * Implements hook_schema().
  */
 function commerce_funds_schema() {
-  $schema['commerce_funds_user_funds'] = array(
-      'description' => 'User Funds',
-      'fields' => array(
-          'uid' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
-          'balance' => array(
-              'description' => '',
-              'type' => 'int',
-              'size' => 'big',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
+  $schema['commerce_funds_account'] = array(
+    'description' => 'User Funds',
+    'fields' => array(
+      'account_id' => array(
+        'description' => 'The unique account id',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
       ),
+      'uid' => array(
+        'description' => 'The user id for the account',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'balance' => array(
+        'description' => 'The balance of this account.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'currency_code' => array(
+        'description' => 'The currency code of this account.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array(
+      'account_id'
+    ),
+    'foreign keys' => array(
+      'uid' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
   );
 
-  $schema['commerce_funds_transactions'] = array(
-      'description' => 'Transactions',
-      'fields' => array(
-          'transaction_id' => array(
-              'description' => '',
-              'type' => 'serial',
-              'not null' => TRUE,
-          ),
-          'uid' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
-          'reference' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => FALSE,
-              'default' => 0,
-          ),
-          'created' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
-          'amount' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => TRUE,
-          ),
-          'type' => array(
-              'type' => 'varchar',
-              'length' => 64,
-              'not null' => TRUE,
-              'description' => "",
-          ),
-          'notes' => array(
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => TRUE,
-              'description' => "",
-          ),
+  $schema['commerce_funds_transaction'] = array(
+    'description' => 'Transactions',
+    'fields' => array(
+      'transaction_id' => array(
+        'description' => '',
+        'type' => 'serial',
+        'not null' => TRUE,
       ),
-      'primary key' => array(
-          'transaction_id'
-      )
-  );
-
-  $schema['commerce_funds_withdraw_requests'] = array(
-      'description' => 'Withdraw Requests',
-      'fields' => array(
-          'request_id' => array(
-              'description' => '',
-              'type' => 'serial',
-              'not null' => TRUE,
-          ),
-          'uid' => array(
-              'description' => 'the id of the user',
-              'type' => 'int',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
-          'created' => array(
-              'description' => '',
-              'type' => 'int',
-              'not null' => TRUE,
-              'default' => 0,
-          ),
-          'method' => array(
-              'description' => '',
-              'type' => 'varchar',
-              'length' => 64,
-              'not null' => TRUE,
-              'description' => "",
-          ),
-          'amount' => array(
-              'description' => 'the amount the user wants to withdraw',
-              'type' => 'int',
-              'not null' => TRUE,
-          ),
-          'status' => array(
-              'description' => 'the status of the request',
-              'type' => 'varchar',
-              'length' => 64,
-              'not null' => TRUE,
-              'description' => "",
-          ),
-          'notes' => array(
-              'description' => '',
-              'type' => 'varchar',
-              'length' => 255,
-              'not null' => FALSE,
-              'description' => "",
-          ),
+      'account_id' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
       ),
-      'primary key' => array(
-          'request_id'
-      )
+      'uid' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'reference' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the card data was first stored.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'amount' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'currency_code' => array(
+        'description' => 'The currency code for the price.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => "",
+      ),
+      'notes' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => "",
+      ),
+    ),
+    'primary key' => array(
+      'transaction_id'
+    ),
+    'foreign keys' => array(
+      'uid' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'account_id' => array(
+        'table' => 'commerce_funds_account',
+        'columns' => array('account_id' => 'account_id'),
+      ),
+    ),
   );
-
 
   return $schema;
 }
