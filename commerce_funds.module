@@ -117,8 +117,12 @@ function commerce_funds_entity_info() {
       'bundle' => 'type',
     ),
     'bundles' => array(
-      'credit' => 'Credit',
-      'debit' => 'Debit',
+      'credit' => array(
+        'label' => 'Credit',
+      ),
+      'debit' => array(
+        'label' => 'Debit',
+      ),
     ),
     'load hook' => 'commerce_funds_transaction_load',
     'view modes' => array(
