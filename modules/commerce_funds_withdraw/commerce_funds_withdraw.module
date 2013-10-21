@@ -559,20 +559,6 @@ function commerce_funds_view_withdrawal_requests_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/commerce/funds/view-withdraw-requests';
 }
 
-function commerce_funds_configure_fees() {
-
-  $payment_methods = commerce_payment_methods();
-
-  $enabled_methods = array();
-
-  foreach ($payment_methods as $payment_method) {
-
-    $enabled_methods[] = $payment_method;
-  }
-
-  return drupal_get_form('commerce_funds_configure_fees_form', $enabled_methods);
-}
-
 function commerce_funds_withdraw_funds($form, &$form_state) {
 
   $methods = commerce_funds_get_enabled_withdrawal_methods();
