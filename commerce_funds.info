@@ -2,6 +2,7 @@ name =  Commerce Funds
 description = Drupal funds management system
 core = 7.x
 
+dependencies[] = commerce
 dependencies[] = commerce_payment
 dependencies[] = rules
 
