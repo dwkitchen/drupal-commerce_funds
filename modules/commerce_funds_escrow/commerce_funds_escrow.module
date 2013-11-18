@@ -1,0 +1,243 @@
+<?php
+/**
+ * @file
+ *   commerce_funds_escrow.module
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_funds_escrow_permission() {
+  return array(
+    'create escrow payment' => array(
+      'title' => 'Create Escrow Payment',
+      'description' => t('Allow users to transfer funds'),
+    ),
+    'manage own escrow payment' => array(
+      'title' => 'Manage Own Escrow Payment',
+      'description' => t('Allow users to manage escrow payments'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_funds_escrow_menu() {
+
+  $items['user/funds/escrow-payments'] = array(
+    'title' => 'Escrow Payments',
+    'page callback' => 'commerce_funds_get_user_escrow_payments',
+    'access arguments' => array('manage own escrow payment'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['user/funds/create-escrow'] = array(
+    'title' => 'Create Escrow Payment',
+    'page callback' => 'commerce_funds_escrow_payment',
+    'access arguments' => array('create escrow payment'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['user/funds/release-escrow/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_release_escrow_payment', 3),
+    'access arguments' => array('transfer funds'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['user/funds/cancel-escrow/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_cancel_escrow_payment', 3),
+    'access arguments' => array('transfer funds'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+function commerce_funds_escrow_payment() {
+  return drupal_get_form('commerce_funds_escrow_payment_form');
+}
+
+function commerce_funds_escrow_payment_form($form, &$form_state) {
+
+  $form['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Amount to put in Escrow (' . commerce_default_currency() . ')'),
+    '#description' => t('Please enter the amount you wish to assign as an escrow payment in ' . commerce_default_currency()),
+    '#default_value' => '',
+    '#size' => 30,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Allocated To'),
+    '#description' => t('Please enter the email of the user you want to allocate the escrow payment to'),
+    '#default_value' => '',
+    '#size' => 30,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  $form['notes'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Notes'),
+    '#description' => '',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Allocate Funds'),
+  );
+
+  return $form;
+}
+
+function commerce_funds_escrow_payment_form_validate($form, &$form_state) {
+
+  global $user;
+
+  if (!is_numeric($form_state['values']['amount'])) {
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
+
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
+
+  if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
+    form_set_error('email', t('Please enter a valid email'));
+    return FALSE;
+  }
+
+  $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+
+  if (!$exists) {
+    form_set_error('email', t('We have no record of users with the email') . ' ' . $form_state['values']['email']);
+    return FALSE;
+  }
+
+  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+
+  if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
+    form_set_error('amount', t("You don't have enough funds to cover this transfer"));
+    return FALSE;
+  }
+}
+
+function commerce_funds_escrow_payment_form_submit($form, &$form_state) {
+
+  global $user;
+
+  $from_user = $user;
+  $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
+
+  $transfer_amount = intval($form_state['values']['amount'] * 100.0);
+
+  $transaction = new stdClass();
+
+  $transaction->uid = $from_user->uid;
+  $transaction->type = 'Escrow Payment';
+  $transaction->reference = $to_user['uid'];
+  $transaction->created = time();
+  $transaction->amount = $transfer_amount;
+  $transaction->notes = $form_state['values']['notes'];
+
+  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
+  $from_user_balance['balance'] -= $transfer_amount;
+
+  $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
+
+  if (!$exists) {
+    $user_balance = new stdClass();
+    $user_balance->uid = $to_user['uid'];
+    $user_balance->balance = 0;
+    drupal_write_record('commerce_funds_user_funds', $user_balance);
+  }
+
+  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
+  drupal_write_record('commerce_funds_transactions', $transaction);
+
+  drupal_set_message(t('Escrow Payment Created Successfully'), 'status');
+}
+
+function commerce_funds_cancel_escrow_payment($form, &$form_state, $transaction_id) {
+
+  $form['#$transaction_id'] = $transaction_id;
+
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
+
+  $user = user_load($transaction['uid']);
+
+  return confirm_form($form, check_plain('Cancel Escrow Payment?'), 'user/funds/escrow-payments', check_plain('Are you sure you want to cancel this payment and return the funds to ' . $user->mail . '?'), check_plain('Yes'));
+}
+
+function commerce_funds_cancel_escrow_payment_submit($form, &$form_state) {
+
+  $transaction_id = $form['#$transaction_id'];
+
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
+
+  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['uid'])->fetchAssoc();
+
+  $from_user_balance['balance'] += $transaction['amount'];
+
+  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
+
+  $transaction['type'] = 'Cancelled Escrow Payment';
+
+  drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
+
+  drupal_mail('commerce_funds', 'escrow_cancel_from', user_load($transaction['uid'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
+  drupal_mail('commerce_funds', 'escrow_cancel_to', user_load($transaction['reference'])->mail, language_default(), array('transaction' => $transaction['transaction_id']));
+
+  drupal_goto('user/funds/escrow-payments');
+}
+
+function commerce_funds_release_escrow_payment($form, &$form_state, $transaction_id) {
+
+  $form['#$transaction_id'] = $transaction_id;
+
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
+
+  $user = user_load($transaction['reference']);
+
+  return confirm_form($form, check_plain('Release Escrow Payment?'), 'user/funds/escrow-payments', check_plain('Are you sure you want to release this payment and send the funds to ' . $user->mail . '?'), check_plain('Yes'));
+}
+
+function commerce_funds_release_escrow_payment_submit($form, &$form_state) {
+
+  $transaction_id = $form['#$transaction_id'];
+
+  $fees = variable_get('commerce_funds_fees', array());
+
+  $fee = array_key_exists('escrow', $fees) ? $fees['escrow'] : 0;
+  $fee_fixed = array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed'] : 0;
+
+  $transaction = db_query("SELECT * FROM {commerce_funds_transactions} WHERE transaction_id= :transaction_id", array(':transaction_id' => $transaction_id))->fetchAssoc();
+
+  $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $transaction['reference'])->fetchAssoc();
+
+  $escrow_after_fee = $transaction['amount'] * (1.0 - $fee / 100.0);
+  $escrow_after_fee_fixed = $transaction['amount'] - $fee_fixed;
+
+  $to_user_balance['balance'] += min(array($escrow_after_fee, $escrow_after_fee_fixed));
+
+  drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
+
+  $transaction['type'] = 'Completed Escrow Payment';
+
+  drupal_write_record('commerce_funds_transactions', $transaction, 'transaction_id');
+
+  drupal_goto('user/funds/escrow-payments');
+}
+
+function commerce_funds_get_user_escrow_payments() {
+  global $user;
+  return theme('account_incoming_escrows', array('uid' => $user->uid)) . theme('account_outgoing_escrows', array('uid' => $user->uid));
+}

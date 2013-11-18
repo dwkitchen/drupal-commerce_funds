@@ -1,0 +1,769 @@
+<?php
+/**
+ * @file
+ *   commerce_funds.module
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_funds_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_funds') . '/includes/views',
+  );
+}
+
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_funds_menu() {
+
+  $items['admin/commerce/funds'] = array(
+    'title' => 'Funds Management',
+    'description' => 'Administer Store Funds',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
+    'weight' => -15,
+  );
+
+  $items['admin/commerce/config/funds'] = array(
+    'title' => 'Funds',
+    'description' => 'Configure Funds Settings',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer funds'),
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
+    'weight' => -15,
+  );
+
+  $items['admin/commerce/funds/configure/fees'] = array(
+    'title' => 'Fees',
+    'page callback' => 'commerce_funds_configure_fees',
+    'access arguments' => array('administer funds'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //funds menu
+  $items['user/%user/funds'] = array(
+    'title' => 'Funds Account',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  //button
+  $items['user/%user/funds/deposit'] = array(
+    'title' => 'Deposit Funds',
+    'description' => 'Deposit Funds',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_deposit_funds_form', 1),
+    'access callback' => TRUE,
+    'access arguments' => array('administer funds'),
+    'weight' => -25,
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file path' => drupal_get_path('module', 'commerce_funds_deposit'),
+    'file' => 'commerce_funds_deposit.module',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_funds_permission() {
+  return array(
+    'view own transactions' => array(
+      'title' => 'View Own Transactions',
+      'description' => 'Allow users to view their transactions',
+    ),
+    'view transactions' => array(
+      'title' => 'View All Transactions',
+      'description' => 'Allow users to view all transactions',
+    ),
+    'administer funds' => array(
+      'title' => 'Administer Funds',
+      'description' => 'Gives users permission to administer all funds operations',
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function commerce_funds_entity_info() {
+  $data = array();
+
+  $data['commerce_funds_account'] = array(
+    'label' => t('Commerce Funds account'),
+    'controller class' => 'CommerceFundsAccountEntityController',
+    'base table' => 'commerce_funds_account',
+    'fieldable' => FALSE,
+
+    'entity keys' => array(
+      'id' => 'account_id',
+      'label' => 'account_id',
+    ),
+    'bundles' => array(),
+    'load hook' => 'commerce_funds_account_load',
+    'view modes' => array(
+      'full' => array(
+        'label' => t('Administrator'),
+        'custom settings' => FALSE,
+      ),
+    ),
+
+    'uri callback' => 'commerce_funds_account_uri',
+
+    'access callback' => 'commerce_funds_account',
+
+    'token type' => 'commerce-funds-account',
+    'metadata controller class' => '',
+
+    'permission labels' => array(
+      'singular' => t('funds account'),
+      'plural' => t('funds accounts'),
+    ),
+
+  );
+
+  $data['commerce_funds_transaction'] = array(
+    'label' => t('Commerce Funds transaction'),
+    'controller class' => 'CommerceFundsTransactionEntityController',
+    'base table' => 'commerce_funds_transaction',
+    'fieldable' => FALSE,
+    'entity keys' => array(
+      'id' => 'transaction_id',
+      'bundle' => 'type',
+      'label' => 'transaction_id',
+    ),
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'bundles' => array(
+      'credit' => array(
+        'label' => 'Credit',
+      ),
+      'debit' => array(
+        'label' => 'Debit',
+      ),
+    ),
+    'load hook' => 'commerce_funds_transaction_load',
+    'view modes' => array(
+      'administrator' => array(
+        'label' => t('Administrator'),
+        'custom settings' => FALSE,
+      ),
+    ),
+    'uri callback' => 'commerce_funds_transaction_uri',
+    'access callback' => 'commerce_funds_transaction_access',
+    'token type' => 'commerce-funds-transaction',
+    'metadata controller class' => '',
+    'permission labels' => array(
+      'singular' => t('funds transaction'),
+      'plural' => t('funds transactions'),
+    ),
+
+  );
+
+  return $data;
+}
+
+
+ /**
+  * Access callback for the entity API.
+  *
+  * @param $op
+  *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+  *   or just 'edit' (being the same as 'create' or 'update').
+  * @param $profile
+  *   (optional) A profile to check access for. If nothing is given, access for
+  *   all profiles is determined.
+  * @param $account
+  *   (optional) The user to check for. Leave it to NULL to check for the global user.
+  *
+  * @return boolean
+  *   Whether access is allowed or not.
+  */
+  function commerce_funds_account($op, $profile = NULL, $account = NULL) {
+    return user_access('administer commerce_funds entities', $account);
+  }
+
+
+
+/**
+ * Returns an initialized funds account object.
+ *
+ * @return
+ *   A transaction object with all default fields initialized.
+ */
+function commerce_funds_account_new($account_user) {
+  return entity_get_controller('commerce_funds_account')->create(array(
+    'uid' => $account_user->uid,
+  ));
+}
+
+/**
+ * Saves a funds account.
+ *
+ * @param object $account
+ *   The full transaction object to save.
+ *
+ * @return
+ *   SAVED_NEW or SAVED_UPDATED depending on the operation performed.
+ */
+function commerce_funds_account_save($account) {
+  return entity_get_controller('commerce_funds_account')->save($account);
+}
+
+/**
+ * Loads a funds account by ID.
+ */
+function commerce_funds_account_load($account_id) {
+  $accounts = entity_load('commerce_funds_account', $account_id);
+  return $accounts ? reset($accounts) : FALSE;
+}
+
+/**
+ * Loads multiple funds accounts by ID or based on a set of matching conditions.
+ *
+ * @see entity_load()
+ */
+function commerce_funds_account_load_by_user($account_user, $currency_code, $reset = FALSE) {
+  $accounts =  entity_load('commerce_funds_account', array(), array('uid' => $account_user->uid, 'currency_code' => $currency_code), $reset);
+  return $accounts ? reset($accounts) : FALSE;
+}
+
+/**
+ * Returns an initialized payment transaction object.
+ *
+ * @param $method_id
+ *   The method_id of the payment method for the transaction.
+ *
+ * @return
+ *   A transaction object with all default fields initialized.
+ */
+function commerce_funds_transaction_new($type = '') {
+  return entity_get_controller('commerce_funds_transaction')->create(array(
+    'type' => $type,
+  ));
+}
+
+/**
+ * Saves a funds transaction.
+ *
+ * @param $transaction
+ *   The full transaction object to save.
+ *
+ * @return
+ *   SAVED_NEW or SAVED_UPDATED depending on the operation performed.
+ */
+function commerce_funds_transaction_save($transaction) {
+  return entity_get_controller('commerce_funds_transaction')->save($transaction);
+}
+
+/**
+ * Loads a funds transaction by ID.
+ */
+function commerce_funds_transaction_load($transaction_id) {
+  $transactions = commerce_funds_transaction_load_multiple(array($transaction_id), array());
+  return $transactions ? reset($transactions) : FALSE;
+}
+
+/**
+ * Loads multiple funds transaction by ID or based on a set of matching conditions.
+ *
+ * @see entity_load()
+ *
+ * @param $transaction_ids
+ *   An array of transaction IDs.
+ * @param $conditions
+ *   An array of conditions on the {commerce_payment_transaction} table in the
+ *     form 'field' => $value.
+ * @param $reset
+ *   Whether to reset the internal transaction loading cache.
+ *
+ * @return
+ *   An array of transaction objects indexed by transaction_id.
+ */
+function commerce_funds_transaction_load_multiple($transaction_ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('commerce_funds_transaction', $transaction_ids, $conditions, $reset);
+}
+
+ /**
+  * View callback
+  */
+  function commerce_funds_view($commerce_funds, $view_mode) {
+    return entity_view('commerce_funds', array($commerce_funds->id => $commerce_funds), $view_mode, NULL, TRUE);
+  }
+
+
+/**
+ * Deletes a funds transaction by ID.
+ *
+ * @param $transaction_id
+ *   The ID of the transaction to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_funds_transaction_delete($transaction_id) {
+  return commerce_funds_transaction_delete_multiple(array($transaction_id));
+}
+
+/**
+ * Deletes multiple funds transactions by ID.
+ *
+ * @param $transaction_ids
+ *   An array of transaction IDs to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_funds_transaction_delete_multiple($transaction_ids) {
+  return entity_get_controller('commerce_funds_transaction')->delete($transaction_ids);
+}
+
+/**
+ * Updates user's funds account
+ */
+function commerce_funds_update_balance() {
+  $order = menu_get_object('commerce_order');
+  // if ($order->data['commerce_payment_order_paid_in_full_invoked'] === TRUE and $order->data['type'] === 'commerce_funds_deposit') {
+  $funds_amount = $order->commerce_order_total['und'][0]['amount'];
+
+  $order->commerce_order_total['und'][0]['currency_code'] = $_SESSION['currency'];
+  $order->commerce_order_total['und'][0]['data']['components'][0]['price']['currency_code'] = $_SESSION['currency'];
+  $order->commerce_order_total['und'][0]['data']['components'][1]['price']['currency_code'] = $_SESSION['currency'];
+  $user_id = $order->uid;
+  $created = $order->created;
+  $currency_code = $_SESSION['currency'];
+  $type = 'credit';
+  $notes = $order->data['notes'];
+
+  if (module_exists('commerce_funds')) {
+    //$data_from_account_tb = db_query("SELECT account_id,currency_code,balance FROM {commerce_funds_account} WHERE uid = :user_id", array(':user_id' => $user_id) );
+    $query = db_select('commerce_funds_account', 'account');
+    $query->fields('account', array('account_id', 'currency_code', 'balance'));
+    $query->condition('uid', $user_id);
+    $result = $query->execute();
+    foreach ($result as $record) {
+      $account_id[] = $record->account_id;
+      $balance[] = $record->balance;
+      $currency_code_db[] = $record->currency_code;
+    }
+
+  if ( count($balance) > 1 or count($balance) === 1) {
+    //$data_from_account_tb = db_query("SELECT account_id,currency_code,balance FROM {commerce_funds_account} WHERE uid = '$user_id' and currency_code = '$currency_code' ");
+      $query = db_select('commerce_funds_account', 'account');
+      $query->fields('account', array('account_id', 'balance', 'currency_code'));
+      $query->condition('uid', $user_id);
+      $query->condition('currency_code', $currency_code);
+      $result = $query->execute();
+
+      unset($balance);
+      unset($account_id);
+      foreach ($result as $record) {
+        $balance = $record->balance;
+        $account_id = $record->account_id;
+        $currency_code = $record->currency_code;
+      }
+
+  }
+     /*
+     if (count($balance) === 1){
+       $data_from_account_tb = db_query("SELECT account_id,currency_code,balance FROM commerce_funds_account WHERE uid = '$user_id' and currency_code = '$currency_code' ");
+       foreach ($data_from_account_tb as $record) {
+         unset($balance);
+         $balance = $record->balance;
+         unset($account_id);
+         $account_id = $record->account_id;
+       }
+     }*/
+  if (!in_array($currency_code, $currency_code_db)) {
+    /*  db_query("INSERT INTO {commerce_funds_account} (uid,balance,currency_code)
+                  VALUES ('$user_id','$funds_amount','$currency_code')");?*/
+    db_insert('commerce_funds_account')
+    ->fields(array(
+      'uid' => $user_id,
+      'balance' => $funds_amount,
+      'currency_code' => $currency_code,
+    ))->execute();
+
+    //$data_from_transac_tb = db_query("SELECT account_id FROM {commerce_funds_account} WHERE uid = '$user_id' and currency_code = '$currency_code'");
+    $query = db_select('commerce_funds_account', 'account');
+    $query->fields('account', array('account_id'));
+    $query->condition('uid', $user_id);
+    $query->condition('currency_code', $currency_code);
+    $result = $query->execute();
+    foreach ($result as $data) {
+      unset($account_id);
+      $account_id = $data->account_id;
+    }
+
+  }
+  else {
+    $new_balance = $balance + $funds_amount;
+    //db_query("UPDATE {commerce_funds_account} SET balance = '$new_balance' WHERE uid = '$user_id' and currency_code = '$currency_code'");
+    $query = db_update('commerce_funds_account');
+    $query->fields(array(
+      'balance' => $new_balance,
+    ));
+    $query->condition('uid', $user_id);
+    $query->condition('currency_code', $currency_code);
+    $num_updated = $query->execute();
+  }
+
+   /* db_query("INSERT INTO {commerce_funds_transaction} (account_id, uid, created, amount, currency_code, type, notes)
+               VALUES('$account_id','$user_id','$created','$funds_amount','$currency_code','$type','$notes')"); */
+  db_insert('commerce_funds_transaction')
+    ->fields(array(
+      'account_id' => $account_id,
+      'uid' => $user_id,
+      'created' => $created,
+      'amount' => $funds_amount,
+      'currency_code' => $currency_code,
+      'type' => $type,
+      'notes' => $notes,
+    ))->execute();
+  }
+
+}
+
+
+
+
+/**
+ * Rules action to credit account balance
+ *
+ * @param object $account_user
+ *   User
+ * @param object $amount
+ *   Commerce Price
+ */
+function commerce_funds_credit($account_user, $amount) {
+
+  $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
+
+  if (!$account) {
+    $account = commerce_funds_account_new($account_user);
+    commerce_funds_account_save($account);
+  }
+
+  $account->balance += $amount['amount'];
+
+  $transaction = commerce_funds_transaction_new('credit');
+  $transaction->account_id = $account->account_id;
+  $transaction->amount = $amount['amount'];
+  $transaction->currency_code = $amount['currency_code'];
+
+  if (commerce_funds_transaction_save($transaction)) {
+    commerce_funds_account_save($account);
+  }
+
+}
+
+
+
+/**
+ * Rules action to debit account balance
+ *
+ * @param object $account_user
+ *   User
+ * @param object $amount
+ *   Commerce Price
+ */
+function commerce_funds_debit($account_user, $amount) {
+
+  $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
+
+  if (!$account) {
+    $account = commerce_funds_account_new($account_user);
+    commerce_funds_account_save($account);
+  }
+
+  $account->balance -= $amount['amount'];
+
+  $transaction = commerce_funds_transaction_new('credit');
+  $transaction->account_id = $account->account_id;
+  $transaction->amount = - $amount['amount'];
+  $transaction->currency_code = $amount['currency_code'];
+
+  if (commerce_funds_transaction_save($transaction)) {
+    commerce_funds_account_save($account);
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Displaies Transactions made of user's account
+ */
+function commerce_funds_view_transactions($form, &$form_state) {
+
+  $transactions = db_query("SELECT * FROM {commerce_funds_transactions}");
+
+  $types = array('Deposit', 'Transfer', 'Escrow Payment', 'Completed Escrow Payment', 'Cancelled Escrow Payment');
+
+  $header = array('Time', 'Type', 'User', 'Amount', 'Details');
+
+  $rows = array();
+
+  $saved_types = array();
+
+  if (array_key_exists('commerce_funds_filter_type', $_SESSION)) {
+    foreach ($_SESSION['commerce_funds_filter_type'] as $index) {
+      $saved_types[] = $types[$index];
+    }
+  }
+
+  foreach ($transactions as $transaction) {
+    if ((array_key_exists('commerce_funds_filter_type', $_SESSION) && in_array($transaction->type, $saved_types)) || !array_key_exists('commerce_funds_filter_type', $_SESSION)) {
+      $user = user_load($transaction->uid);
+      $to_user = $transaction->type == 'Transfer' ? user_load($transaction->reference) : array();
+      $rows[] = array(date('d/m/Y   g:i:s A', $transaction->created), $transaction->type, $user->mail, commerce_currency_format($transaction->amount, commerce_default_currency()), $transaction->type == 'Transfer' ? '<br />To: ' . $to_user->mail : '');
+    }
+  }
+
+  $form['filter_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Type'),
+    '#options' => $types,
+    '#attributes' => array('multiple' => TRUE),
+    '#multiple' => TRUE,
+    '#size' => 5,
+    '#default_value' => array_key_exists('commerce_funds_filter_type', $_SESSION) ? $_SESSION['commerce_funds_filter_type'] : '',
+  );
+
+  $form['filter'] = array(
+    '#type' => 'submit',
+    '#value' => t('Filter'),
+  );
+
+  $form['reset'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset'),
+    '#suffix' => theme('table', array('header' => $header, 'rows' => $rows))
+  );
+
+  return $form;
+}
+
+/**
+ * Filter transactions
+ */
+function commerce_funds_view_transactions_submit($form, &$form_state) {
+  if ($form_state['values']['op'] == 'Filter') {
+    if (!empty($form_state['values']['filter_type']))
+      $_SESSION['commerce_funds_filter_type'] = $form_state['values']['filter_type']; else {
+      unset($_SESSION['commerce_funds_filter_type']);
+    }
+  }
+  elseif ($form_state['values']['op'] == 'Reset') {
+    unset($_SESSION['commerce_funds_filter_type']);
+  }
+
+  $form_state['redirect'] = 'admin/commerce/funds/view-transactions';
+}
+
+/**
+ * Configure funds fees
+ */
+function commerce_funds_configure_fees() {
+
+  $payment_methods = commerce_payment_methods();
+
+  $enabled_methods = array();
+
+  foreach ($payment_methods as $payment_method) {
+
+    $enabled_methods[] = $payment_method;
+  }
+
+  return drupal_get_form('commerce_funds_configure_fees_form', $enabled_methods);
+}
+
+
+/**
+ * Implements hook_form().
+ */
+function commerce_funds_configure_fees_form($form, &$form_state, $enabled_methods) {
+
+  $form['#enabledmethods'] = $enabled_methods;
+
+  $fees = variable_get('commerce_funds_fees', array());
+
+  $form['transfer'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain('Transfer Fee (%)'),
+    '#description' => check_plain('Fee taken on transfers'),
+    '#default_value' => array_key_exists('transfer', $fees) ? $fees['transfer'] : '0',
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => TRUE,
+  );
+
+  $form['transfer_fixed'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain('Fixed Transfer Fee (' . commerce_default_currency() . ')'),
+    '#description' => check_plain('Fixed fee taken on transfers'),
+    '#default_value' => array_key_exists('transfer_fixed', $fees) ? $fees['transfer_fixed'] / 100 : '0',
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => TRUE,
+  );
+
+  $form['escrow'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain('Escrow Fee (%)'),
+    '#description' => check_plain('Fee taken on escrows'),
+    '#default_value' => array_key_exists('escrow', $fees) ? $fees['escrow'] : '0',
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => TRUE,
+  );
+
+  $form['escrow_fixed'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain('Fixed Escrow Fee (' . commerce_default_currency() . ')'),
+    '#description' => check_plain('Fixed fee taken on escrows'),
+    '#default_value' => array_key_exists('escrow_fixed', $fees) ? $fees['escrow_fixed'] / 100 : '0',
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => TRUE,
+  );
+
+  $form['deposit'] = array(
+    '#type' => 'fieldset',
+    '#title' => check_plain('Deposit Fees'),
+    '#collapsible' => FALSE,
+  );
+
+  foreach ($enabled_methods as $method) {
+    $method_id = $method['method_id'];
+    $form['deposit'][$method_id] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain($method['title'] . ' Fee (%)'),
+      '#description' => check_plain('Fee taken for Deposits made using ' . $method['title']),
+      '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+    );
+    $form['deposit'][$method_id . '_fixed'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Fixed ' . $method['title'] . ' Fee (' . commerce_default_currency() . ')'),
+      '#description' => check_plain('Fixed Fee taken for Deposits made using ' . $method['title']),
+      '#default_value' => array_key_exists($method_id . '_fixed', $fees) ? $fees[$method_id . '_fixed'] / 100 : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+    );
+  }
+
+  $form['withdraw'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Withdrawal Fees'),
+    '#collapsible' => FALSE,
+  );
+
+  $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
+
+  foreach ($enabled_methods as $key => $method) {
+    $method_id = $key;
+    $form['withdraw'][$method_id] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain($method . ' Fee (%)'),
+      '#description' => check_plain('Fee taken for Withdrawals made using ' . $method),
+      '#default_value' => array_key_exists($method_id, $fees) ? $fees[$method_id] : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+    );
+    $form['withdraw'][$method_id . '_fixed'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain('Fixed ' . $method . ' Fee (' . commerce_default_currency() . ')'),
+      '#description' => check_plain('Fixed Fee taken for Withdrawals made using ' . $method),
+      '#default_value' => array_key_exists($method_id . '_fixed', $fees) ? $fees[$method_id . '_fixed'] / 100 : '0',
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#required' => TRUE,
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate fees
+ */
+function commerce_funds_configure_fees_form_validate($form, &$form_state) {
+
+  $enabled_methods = $form['#enabledmethods'];
+
+  foreach ($enabled_methods as $method) {
+    if (!is_numeric($form_state['values'][$method['method_id']])) {
+      form_set_error('amount', t('Value must be Numeric'));
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Sumbit the form.
+ */
+function commerce_funds_configure_fees_form_submit($form, &$form_state) {
+
+  $fees = array();
+
+  $fees['transfer'] = $form_state['values']['transfer'];
+  $fees['transfer_fixed'] = $form_state['values']['transfer_fixed'] * 100;
+  $fees['escrow'] = $form_state['values']['escrow'];
+  $fees['escrow_fixed'] = $form_state['values']['escrow_fixed'] * 100;
+
+  $enabled_methods = $form['#enabledmethods'];
+
+  foreach ($enabled_methods as $method) {
+    $method_id = $method['method_id'];
+    $fees[$method_id] = $form_state['values'][$method_id];
+    $fees[$method_id . '_fixed'] = $form_state['values'][$method_id . '_fixed'] * 100;
+  }
+
+  $enabled_methods = commerce_funds_get_enabled_withdrawal_methods();
+
+  foreach ($enabled_methods as $key => $method) {
+    $method_id = $key;
+    $fees[$method_id] = $form_state['values'][$method_id];
+    $fees[$method_id . '_fixed'] = $form_state['values'][$method_id . '_fixed'] * 100;
+  }
+
+  variable_set('commerce_funds_fees', $fees);
+}
+
+
