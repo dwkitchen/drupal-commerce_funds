@@ -1,0 +1,252 @@
+<?php
+/**
+ * @file
+ *   commerce_funds_transfer.module
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_funds_transfer_permission() {
+  return array(
+    'transfer funds' => array(
+      'title' => 'Transfer Funds',
+      'description' => 'Allow users to transfer funds',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_funds_transfer_menu() {
+
+  $items['user/funds/transfer'] = array(
+    'title' => 'Transfer Funds',
+    'page callback' => 'commerce_funds_transfer_funds',
+    'access arguments' => array('transfer funds'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Loads commerce_funds_transfer_funds_form().
+ */
+function commerce_funds_transfer_funds() {
+  return drupal_get_form('commerce_funds_transfer_funds_form');
+}
+
+/**
+ * Implements hook_form().
+ */
+function commerce_funds_transfer_funds_form($form, &$form_state) {
+
+  $form['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Amount to transfer (' . commerce_default_currency() . ')'),
+    '#description' => t('Please enter the amount you wish to transfer in ' . commerce_default_currency()),
+    '#default_value' => '',
+    '#size' => 30,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  $currencies = variable_get('commerce_enabled_currencies');
+  $enabled_currencies = array();
+  foreach ($currencies as $k => $v) {
+    if ($v !== 0 and !empty($v)) {
+      $enabled_currencies[] = $v;
+    }
+  }
+
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency'),
+    '#options' =>  $enabled_currencies,
+    '#default_value' => commerce_default_currency(),
+    '#description' => t('Select desire currency'),
+  );
+
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Transfer To'),
+    '#description' => t('Please enter the email of the user you want to transfer the funds to'),
+    '#default_value' => '',
+    '#size' => 30,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  $form['notes'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Notes'),
+    '#description' => '',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Transfer Funds'),
+  );
+
+  return $form;
+}
+/**
+ * Validate the form.
+ */
+function commerce_funds_transfer_funds_form_validate($form, &$form_state) {
+
+  global $user;
+  global $base_url;
+
+  if (!is_numeric($form_state['values']['amount'])) {
+
+    form_set_error('amount', t('Value must be Numeric'));
+    return FALSE;
+  }
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else{
+    $chosen_currency = $form_state['values']['currency'];
+  }
+
+  if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
+    form_set_error('amount', t('Value must be greater than 0'));
+    return FALSE;
+  }
+
+  if (!filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL)) {
+    form_set_error('email', t('Please enter a valid email'));
+    return FALSE;
+  }
+
+  $entered_email = $form_state['values']['email'];
+  $exists = db_query("SELECT * FROM {users} WHERE mail IN (:entered_email)", array(':entered_email' => $entered_email))->fetchAssoc();
+  if (!$exists['mail']) {
+    form_set_error('email', t('We have no record of users with the email') . ' ' . $form_state['values']['email']);
+    return FALSE;
+  }
+
+  $user_balance = db_query("SELECT * FROM {commerce_funds_account} WHERE uid='" . $user->uid . "' and currency_code ='" . $chosen_currency . "'")->fetchAssoc();
+
+  if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100) or $user_balance['balance'] < ($form_state['values']['amount'] * 100)) {
+     $url = $base_url . t("/user/@user/funds/deposit", array('@user' => $user->uid));
+     form_set_error('amount', t("You don't have enough funds to cover this transfer. Please " . l(t("Deposit Funds"), url($url))));
+    return FALSE;
+  }
+
+  $query = db_select('users', 'user');
+  $query->fields('user', array('uid'));
+  $query->condition('mail', $form_state['values']['email']);
+  $result = $query->execute();
+  foreach ($result as $data) {
+    $uid = $data->uid;
+  }
+
+  $query = db_select('commerce_funds_account', 'user_account');
+  $query->fields('user_account', array('balance'));
+  $query->condition('uid', $uid);
+  $query->condition('currency_code', $chosen_currency);
+  $result = $query->execute();
+  foreach ($result as $data) {
+    $balance = $data->balance;
+  }
+  if (empty($balance)) {
+    $balance = 0;
+  }
+  else {
+    $balance = $balance / 100;
+  }
+  $amount = $form_state['values']['amount'];
+  //$allowed_transfer = 21474836.47 - $balance;
+  $allowed_transfer = 20000000 - $balance;
+  if ( (($amount + $balance ) > 20000000 ) ) {
+    if ($allowed_transfer == 0) {
+      form_set_error('amount', t("The recipient has reached the maximum amount in their account."));
+    }
+    else {
+      form_set_error('amount', t("You can transfer up to @allowed_transfer @chosen_currency", array('@allowed_transfer' => $allowed_transfer, '@chosen_currency' => $chosen_currency)));
+    }
+  }
+
+}
+
+
+
+/**
+ * Submits the form.
+ */
+function commerce_funds_transfer_funds_form_submit($form, &$form_state) {
+
+  global $user;
+  $from_user = $user;
+
+  $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchObject();
+  $exists = db_query("SELECT * FROM {commerce_funds_account} WHERE uid=" . $to_user->uid )->fetchAssoc();
+
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else{
+    $chosen_currency = $form_state['values']['currency'];
+  }
+
+  if (!$exists) {
+    $user_balance = new stdClass();
+    $user_balance->uid = $to_user->uid;
+    $user_balance->balance = 0;
+    $user_balance->currency_code = $chosen_currency;
+    drupal_write_record('commerce_funds_account', $user_balance);
+  }
+  $fees = variable_get('commerce_funds_fees', array());
+
+  $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
+  $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
+
+  $transfer_amount = intval($form_state['values']['amount'] * 100.0);
+
+  $transfer_after_fee = $transfer_amount * (1.0 - $fee / 100.0);
+  $transfer_after_fee_fixed = $transfer_amount - $fee;
+
+  $amount = $form_state['values']['amount'];
+  $transfer = commerce_funds_transfer_transaction($to_user, $from_user, $amount, $chosen_currency);
+
+  drupal_set_message(t('Transfer Successful'), 'status');
+}
+
+/**
+ * Credit and Debit both of the accounts.
+ */
+function commerce_funds_transfer_transaction($to_user, $from_user, $amount, $currency_code) {
+
+  $account_to = commerce_funds_account_load_by_user($to_user, $currency_code);
+  $account_from = commerce_funds_account_load_by_user($from_user, $currency_code);
+
+  $amount = array(
+    'amount' => $amount,
+    'currency_code' => $currency_code,
+  );
+  $amount['amount'] = $amount['amount'] * 100;
+  if (empty($account_to)) {
+    $to_user->currency_code = $currency_code;
+    $account_to = commerce_funds_account_new($to_user);
+    $account_to->uid = $to_user->uid;
+    $account_to->currency_code = $currency_code;
+  }
+  $amount['reference'] = $from_user->uid;
+  commerce_funds_credit($account_to, $amount);
+  $amount['reference'] = $to_user->uid;
+  commerce_funds_debit($account_from, $amount);
+}
