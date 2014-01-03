@@ -5,6 +5,8 @@ core = 7.x
 dependencies[] = commerce
 dependencies[] = commerce_payment
 dependencies[] = rules
+dependencies[] = commerce_checkout
+dependencies[] = commerce_multicurrency
 
 
 ; Module includes

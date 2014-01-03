@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * Views for the default funds UI.
  */

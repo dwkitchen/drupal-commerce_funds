@@ -28,15 +28,32 @@ function commerce_funds_transfer_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['user/%user/funds/transfer'] = array(
+    'title' => 'Transfer Funds',
+    'description' => 'Transfer Funds',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_transfer_funds_form'),
+    'access arguments' => array('transfer funds'),
+    'weight' => -25,
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file path' => drupal_get_path('module', 'commerce_funds_transfer'),
+    'file' => 'commerce_funds_transfer.module',
+  );
+
   return $items;
 }
 
-
-
+/**
+ * Loads commerce_funds_transfer_funds_form().
+ */
 function commerce_funds_transfer_funds() {
   return drupal_get_form('commerce_funds_transfer_funds_form');
 }
 
+/**
+ * Implements hook_form().
+ */
 function commerce_funds_transfer_funds_form($form, &$form_state) {
 
   $form['amount'] = array(
@@ -47,6 +64,26 @@ function commerce_funds_transfer_funds_form($form, &$form_state) {
     '#size' => 30,
     '#maxlength' => 128,
     '#required' => TRUE,
+  );
+
+  $currencies = variable_get('commerce_enabled_currencies');
+  if (empty($currencies)) {
+    $currency = commerce_default_currency();
+    $currencies[$currency] = $currency;
+  }
+  $enabled_currencies = array();
+  foreach ($currencies as $k => $v) {
+    if ($v !== 0 and !empty($v)) {
+      $enabled_currencies[] = $v;
+    }
+  }
+
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency'),
+    '#options' =>  $enabled_currencies,
+    '#default_value' => commerce_default_currency(),
+    '#description' => t('Select desire currency'),
   );
 
   $form['email'] = array(
@@ -73,13 +110,29 @@ function commerce_funds_transfer_funds_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Validate the form.
+ */
 function commerce_funds_transfer_funds_form_validate($form, &$form_state) {
 
   global $user;
+  global $base_url;
 
   if (!is_numeric($form_state['values']['amount'])) {
+
     form_set_error('amount', t('Value must be Numeric'));
     return FALSE;
+  }
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else{
+    $chosen_currency = $form_state['values']['currency'];
   }
 
   if (is_numeric($form_state['values']['amount']) && !(floatval($form_state['values']['amount']) > 0)) {
@@ -92,65 +145,111 @@ function commerce_funds_transfer_funds_form_validate($form, &$form_state) {
     return FALSE;
   }
 
-  $exists = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
-
-  if (!$exists) {
+  $entered_email = $form_state['values']['email'];
+  $exists = user_load_by_mail($entered_email);
+  if (empty($exists)) {
     form_set_error('email', t('We have no record of users with the email') . ' ' . $form_state['values']['email']);
     return FALSE;
   }
 
-  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+  $user_balance = commerce_funds_account_load_by_user($user, $chosen_currency);
 
-  if ($user_balance['balance'] < intval($form_state['values']['amount'] * 100)) {
-    form_set_error('amount', t("You don't have enough funds to cover this transfer"));
+  if ($user_balance->balance < intval(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE)) or $user_balance->balance < (commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE))) {
+    $url = $base_url . t("/user/@user/funds/deposit", array('@user' => $user->uid));
+    form_set_error('amount', t("You don't have enough funds to cover this transfer. Please " . l(t("Deposit Funds"), url($url))));
     return FALSE;
+  }
+
+  $account_funds_account = commerce_funds_account_load_by_user($user, $chosen_currency);
+
+  if (empty($account_funds_account)) {
+    $db_balance = 0;
+  }
+  else {
+    $balance = commerce_currency_amount_to_decimal($account_funds_account->balance, $chosen_currency);
+  }
+
+  $amount = $form_state['values']['amount'];
+
+  $allowed_transfer = 20000000 - $balance;
+  if ( (($amount + $balance ) > 20000000 ) ) {
+    if ($allowed_transfer == 0) {
+      form_set_error('amount', t("The recipient has reached the maximum amount in their account."));
+    }
+    else {
+      form_set_error('amount', t("You can transfer up to @allowed_transfer @chosen_currency", array('@allowed_transfer' => $allowed_transfer, '@chosen_currency' => $chosen_currency)));
+    }
   }
 }
 
+/**
+ * Submits the form.
+ */
 function commerce_funds_transfer_funds_form_submit($form, &$form_state) {
 
   global $user;
-
   $from_user = $user;
-  $to_user = db_query("SELECT * FROM {users} WHERE mail='" . $form_state['values']['email'] . "'")->fetchAssoc();
 
+  $to_user = user_load_by_mail($form_state['values']['email']);
+
+  $exists = user_load($user->uid);
+
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else{
+    $chosen_currency = $form_state['values']['currency'];
+  }
+
+  if (empty($exists)) {
+    $user_balance = new stdClass();
+    $user_balance->uid = $to_user->uid;
+    $user_balance->balance = 0;
+    $user_balance->currency_code = $chosen_currency;
+    drupal_write_record('commerce_funds_account', $user_balance);
+  }
   $fees = variable_get('commerce_funds_fees', array());
 
   $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
   $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
 
-  $transfer_amount = intval($form_state['values']['amount'] * 100.0);
+  $transfer_amount = intval(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE));
 
-  $transfer_after_fee = $transfer_amount * (1.0 - $fee / 100.0);
+  $transfer_after_fee = $transfer_amount * (1.0 - commerce_currency_amount_to_decimal($fee, $chosen_currency));
   $transfer_after_fee_fixed = $transfer_amount - $fee;
 
-  $transaction = new stdClass();
-
-  $transaction->uid = $from_user->uid;
-  $transaction->type = 'Transfer';
-  $transaction->reference = $to_user['uid'];
-  $transaction->created = time();
-  $transaction->amount = $transfer_amount;
-  $transaction->notes = $form_state['values']['notes'];
-
-  $from_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $from_user->uid)->fetchAssoc();
-  $from_user_balance['balance'] -= $transfer_amount;
-
-  $exists = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
-
-  if (!$exists) {
-    $user_balance = new stdClass();
-    $user_balance->uid = $to_user['uid'];
-    $user_balance->balance = 0;
-    drupal_write_record('commerce_funds_user_funds', $user_balance);
-  }
-
-  $to_user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $to_user['uid'])->fetchAssoc();
-  $to_user_balance['balance'] += min(array($transfer_after_fee, $transfer_after_fee_fixed));
-
-  drupal_write_record('commerce_funds_user_funds', $from_user_balance, 'uid');
-  drupal_write_record('commerce_funds_user_funds', $to_user_balance, 'uid');
-  drupal_write_record('commerce_funds_transactions', $transaction);
+  $amount = $form_state['values']['amount'];
+  $transfer = commerce_funds_transfer_transaction($to_user, $from_user, $amount, $chosen_currency);
 
   drupal_set_message(t('Transfer Successful'), 'status');
+}
+
+/**
+ * Credit and Debit both of the accounts.
+ */
+function commerce_funds_transfer_transaction($to_user, $from_user, $amount, $currency_code) {
+
+  $account_to = commerce_funds_account_load_by_user($to_user, $currency_code);
+  $account_from = commerce_funds_account_load_by_user($from_user, $currency_code);
+
+  $amount = array(
+    'amount' => $amount,
+    'currency_code' => $currency_code,
+  );
+  $amount['amount'] = commerce_currency_decimal_to_amount($amount['amount'], $currency_code, $round = TRUE);
+  if (empty($account_to)) {
+    $to_user->currency_code = $currency_code;
+    $account_to = commerce_funds_account_new($to_user, $currency_code);
+    $account_to->uid = $to_user->uid;
+    $account_to->currency_code = $currency_code;
+  }
+  $amount['reference'] = $from_user->uid;
+  commerce_funds_credit($account_to, $amount);
+  $amount['reference'] = $to_user->uid;
+  commerce_funds_debit($account_from, $amount);
 }

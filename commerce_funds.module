@@ -67,6 +67,11 @@ function commerce_funds_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['user/%user/funds'] = array(
+    'title' => 'Funds Account',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
   return $items;
 }
 
@@ -145,14 +150,34 @@ function commerce_funds_entity_info() {
 }
 
 /**
+ * Access callback for the entity API.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $profile
+ *   (optional) A profile to check access for. If nothing is given, access for
+ *   all profiles is determined.
+ * @param $account
+ *   (optional) The user to check for. Leave it to NULL to check for the global user.
+ *
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function commerce_funds_account($op, $profile = NULL, $account = NULL) {
+    return user_access('administer commerce_funds entities', $account);
+  }
+
+/**
  * Returns an initialized funds account object.
  *
  * @return
  *   A transaction object with all default fields initialized.
  */
-function commerce_funds_account_new($account_user) {
+function commerce_funds_account_new($account_user, $currency_code) {
   return entity_get_controller('commerce_funds_account')->create(array(
     'uid' => $account_user->uid,
+    'currency_code' => $currency_code,
   ));
 }
 
@@ -172,8 +197,8 @@ function commerce_funds_account_save($account) {
 /**
  * Loads a funds account by ID.
  */
-function commerce_funds_account_load($account_id) {
-  $accounts = entity_load('commerce_funds_account', $account_id);
+function commerce_funds_account_load($account_id, $conditions) {
+  $accounts = entity_load('commerce_funds_account', $account_id, $conditions);
   return $accounts ? reset($accounts) : FALSE;
 }
 
@@ -243,6 +268,13 @@ function commerce_funds_transaction_load_multiple($transaction_ids = array(), $c
   return entity_load('commerce_funds_transaction', $transaction_ids, $conditions, $reset);
 }
 
+ /**
+  * View callback
+  */
+function commerce_funds_view($commerce_funds, $view_mode) {
+  return entity_view('commerce_funds', array($commerce_funds->id => $commerce_funds), $view_mode, NULL, TRUE);
+}
+
 /**
  * Deletes a funds transaction by ID.
  *
@@ -280,16 +312,28 @@ function commerce_funds_transaction_delete_multiple($transaction_ids) {
 function commerce_funds_credit($account_user, $amount) {
 
   $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
-
-  if (!$account) {
-    $account = commerce_funds_account_new($account_user);
+  $currency_code = $amount['currency_code'];
+  if (empty($account)) {
+    ddebug_backtrace($account_user);
+    $account = commerce_funds_account_new($account_user, $currency_code);
     commerce_funds_account_save($account);
   }
 
+
+
   $account->balance += $amount['amount'];
+  $account->currency_code = $amount['currency_code'];
 
   $transaction = commerce_funds_transaction_new('credit');
   $transaction->account_id = $account->account_id;
+
+  $transaction->uid = $account_user->uid;
+  if (empty($amount['reference'])) {
+    $transaction->reference = $account_user->uid;
+  }
+  else {
+    $transaction->reference = $amount['reference'];
+  }
   $transaction->amount = $amount['amount'];
   $transaction->currency_code = $amount['currency_code'];
 
@@ -317,14 +361,23 @@ function commerce_funds_debit($account_user, $amount) {
 
   $account->balance -= $amount['amount'];
 
-  $transaction = commerce_funds_transaction_new('credit');
+  $transaction = commerce_funds_transaction_new('debit');
   $transaction->account_id = $account->account_id;
   $transaction->amount = - $amount['amount'];
+  $transaction->type = 'debit';
   $transaction->currency_code = $amount['currency_code'];
 
-  if (commerce_funds_transaction_save($transaction)) {
-    commerce_funds_account_save($account);
+  if (empty($amount['reference'])) {
+    $transaction->reference = $account_user->uid;
   }
+  else {
+    $transaction->reference = $amount['reference'];
+  }
+
+    if (commerce_funds_transaction_save($transaction)) {
+
+      commerce_funds_account_save($account);
+    }
 
 }
 
@@ -346,10 +399,12 @@ function commerce_funds_debit($account_user, $amount) {
 
 
 
-
+/**
+ * Displaies Transactions made of user's account
+ */
 function commerce_funds_view_transactions($form, &$form_state) {
 
-  $transactions = db_query("SELECT * FROM {commerce_funds_transactions}");
+  $transactions = entity_load('commerce_funds_transactions', $ids = FALSE, $conditions = array(), $reset = FALSE);
 
   $types = array('Deposit', 'Transfer', 'Escrow Payment', 'Completed Escrow Payment', 'Cancelled Escrow Payment');
 
@@ -397,6 +452,9 @@ function commerce_funds_view_transactions($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Filter transactions
+ */
 function commerce_funds_view_transactions_submit($form, &$form_state) {
   if ($form_state['values']['op'] == 'Filter') {
     if (!empty($form_state['values']['filter_type']))
@@ -411,7 +469,9 @@ function commerce_funds_view_transactions_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/commerce/funds/view-transactions';
 }
 
-
+/**
+ * Configure funds fees
+ */
 function commerce_funds_configure_fees() {
 
   $payment_methods = commerce_payment_methods();
@@ -426,6 +486,9 @@ function commerce_funds_configure_fees() {
   return drupal_get_form('commerce_funds_configure_fees_form', $enabled_methods);
 }
 
+/**
+ * Implements hook_form().
+ */
 function commerce_funds_configure_fees_form($form, &$form_state, $enabled_methods) {
 
   $form['#enabledmethods'] = $enabled_methods;
@@ -538,6 +601,9 @@ function commerce_funds_configure_fees_form($form, &$form_state, $enabled_method
   return $form;
 }
 
+/**
+ * Validate fees
+ */
 function commerce_funds_configure_fees_form_validate($form, &$form_state) {
 
   $enabled_methods = $form['#enabledmethods'];
@@ -550,6 +616,9 @@ function commerce_funds_configure_fees_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Sumbit the form.
+ */
 function commerce_funds_configure_fees_form_submit($form, &$form_state) {
 
   $fees = array();
