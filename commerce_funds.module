@@ -71,7 +71,10 @@ function commerce_funds_entity_info() {
 
   $data['commerce_funds_account'] = array(
     'label' => t('Commerce Funds account'),
-    'controller class' => 'CommerceFundsAccountEntityController',
+    'plural label' => t('Commerce Funds accounts'),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'views controller class' => 'EntityDefaultViewsController',
     'base table' => 'commerce_funds_account',
     'fieldable' => FALSE,
     'entity keys' => array(
@@ -81,7 +84,7 @@ function commerce_funds_entity_info() {
     'bundles' => array(),
     'load hook' => 'commerce_funds_account_load',
     'view modes' => array(
-      'administrator' => array(
+      'full' => array(
         'label' => t('Administrator'),
         'custom settings' => FALSE,
       ),
@@ -98,7 +101,9 @@ function commerce_funds_entity_info() {
 
   $data['commerce_funds_transaction'] = array(
     'label' => t('Commerce Funds transaction'),
-    'controller class' => 'CommerceFundsTransactionEntityController',
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'views controller class' => 'EntityDefaultViewsController',
     'base table' => 'commerce_funds_transaction',
     'fieldable' => FALSE,
     'entity keys' => array(
@@ -119,7 +124,7 @@ function commerce_funds_entity_info() {
     ),
     'load hook' => 'commerce_funds_transaction_load',
     'view modes' => array(
-      'administrator' => array(
+      'full' => array(
         'label' => t('Administrator'),
         'custom settings' => FALSE,
       ),
