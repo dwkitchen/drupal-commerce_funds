@@ -33,8 +33,7 @@ function commerce_funds_entity_property_info() {
   $account_properties['balance'] = array(
     'label' => t('Balance'),
     'description' => t('The balance of the account.'),
-    'type' => 'integer',
-    'raw getter callback' => 'entity_property_verbatim_get',
+    'type' => 'decimal',
     'schema field' => 'balance',
   );
 
@@ -100,13 +99,11 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'created',
   );
 
-  $transaction_properties['balance'] = array(
-    'label' => t('Balance'),
-    'description' => t('The balance of the account.'),
-    'type' => 'integer',
-    'raw getter callback' => 'entity_property_verbatim_get',
-    'setter callback' => 'entity_property_verbatim_set',
-    'schema field' => 'balance',
+  $transaction_properties['amount'] = array(
+    'label' => t('Amount'),
+    'description' => t('The amount for this transaction.'),
+    'type' => 'decimal',
+    'schema field' => 'amount',
   );
 
   $transaction_properties['currency_code'] = array(
