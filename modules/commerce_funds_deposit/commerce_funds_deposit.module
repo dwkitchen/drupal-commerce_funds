@@ -45,22 +45,6 @@ function commerce_funds_deposit_menu() {
 }
 
 /**
- * Implements hook_commerce_product_type_info().
- */
-function commerce_funds_deposit_commerce_product_type_info() {
-
-  return array(
-    'deposit' => array(
-      'type' => 'deposit',
-      'name' => 'Funds Deposit',
-      'description' => 'Stores a Funds Deposit Operation',
-      'help' => '',
-      'revision' => 1
-    )
-  );
-}
-
-/**
  * Loads commerce_funds_deposit_funds_form().
  */
 function commerce_funds_deposit_funds() {
