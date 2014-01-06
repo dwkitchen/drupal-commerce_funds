@@ -45,6 +45,24 @@ function commerce_funds_deposit_menu() {
 }
 
 /**
+ * Implements hook_commerce_line_item_type_info().
+ */
+function commerce_funds_deposit_commerce_line_item_type_info() {
+  $line_item_types = array();
+
+  $line_item_types['deposit'] = array(
+    'type' => 'deposit',
+    'name' => t('Deposit'),
+    'description' => t('Deposit line item'),
+    'product' => FALSE,
+    'add_form_submit_value' => t('Deposit'),
+    'base' => 'commerce_funds_deposit_line_item',
+  );
+
+  return $line_item_types;
+}
+
+/**
  * Loads commerce_funds_deposit_funds_form().
  */
 function commerce_funds_deposit_funds() {
@@ -152,45 +170,6 @@ function commerce_funds_deposit_funds_form_validate($form, &$form_state) {
 }
 
 /**
- * Implements hook_commerce_line_item_type_info().
- */
-function commerce_funds_deposit_commerce_line_item_type_info() {
-  $line_item_types = array();
-
-  $line_item_types['deposit'] = array(
-    'type' => 'deposit',
-    'name' => t('Deposit'),
-    'description' => t('Deposit line item'),
-    'product' => FALSE,
-    'add_form_submit_value' => t('Deposit'),
-    'base' => 'commerce_funds_deposit_line_item',
-  );
-
-  return $line_item_types;
-}
-
-/**
- * Creates new line item.
- */
-function commerce_funds_deposit_line_item_new($deposit, $quantity = 1, $order_id, $data = array(), $type = 'deposit') {
-  // Ensure a default deposit line item type.
-  if (empty($type)) {
-    $type = 'deposit';
-  }
-
-  // Create the new line item.
-  $line_item = entity_create('commerce_line_item', array(
-    'type' => 'deposit',
-    'order_id' => $order_id,
-    'line_item_label' => $deposit->sku,
-    'quantity' => 1,
-    'data' => $data,
-  ));
-
-  return $line_item;
-}
-
-/**
  * Submits the form.
  */
 function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
@@ -260,4 +239,25 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
   $order = commerce_order_save($deposit_order);
 
   drupal_goto('checkout/' . $deposit_order->order_id);
+}
+
+/**
+ * Creates new line item.
+ */
+function commerce_funds_deposit_line_item_new($deposit, $quantity = 1, $order_id, $data = array(), $type = 'deposit') {
+  // Ensure a default deposit line item type.
+  if (empty($type)) {
+    $type = 'deposit';
+  }
+
+  // Create the new line item.
+  $line_item = entity_create('commerce_line_item', array(
+    'type' => 'deposit',
+    'order_id' => $order_id,
+    'line_item_label' => $deposit->sku,
+    'quantity' => 1,
+    'data' => $data,
+  ));
+
+  return $line_item;
 }
