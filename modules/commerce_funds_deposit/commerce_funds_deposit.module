@@ -185,48 +185,21 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
     $form_state['input']['currency'] = $chosen_currency;
   }
   else {
-    $chosen_currency = $form_state['values']['currency'];
+    $currency_code = $form_state['values']['currency'];
   }
 
-  $deposit = new stdClass();
+  $_SESSION['currency'] = $currency_code;
 
-  $deposit->uid = $user->uid;
-  $deposit->sku = 'deposit_' . $user->uid . '_' . $form_state['values']['amount'] . '_' . microtime();
-  $deposit->commerce_price['und'][0]['amount'] = commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE);
-  $deposit->commerce_price['und'][0]['currency_code'] = $chosen_currency;
-
-  $deposit->commerce_order_total['und'][0]['amount'] = commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE);
-  $deposit->commerce_order_total['und'][0]['data']['components'][0]['price']['currency_code'] = $chosen_currency;
-  $deposit->commerce_order_total['und'][0]['amount'] = commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE);
-  $deposit->commerce_order_total['und'][0]['currency_code'] = $chosen_currency;
-
-  $_SESSION['currency'] = $chosen_currency;
-
-  $deposit->title = 'Deposit ' . commerce_currency_format(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE), $chosen_currency);
-  $deposit->type = 'deposit';
-
+  $deposit = array(
+  	'amount' => commerce_currency_decimal_to_amount($form_state['values']['amount'], $currency_code, $round = TRUE),
+    'currency_code' => $currency_code,
+  );
+  
   //Create an order
   $deposit_order = (!empty($user->uid)) ? commerce_order_new($user->uid, 'checkout_review') : commerce_cart_order_new();
 
   //Create a line item
-  $line_item = commerce_funds_deposit_line_item_new($deposit, 1, $deposit_order->order_id );
-
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $line_item->line_item_label = $deposit->sku;
-
-  $line_item->commerce_unit_price = $deposit->commerce_price;
-
-  if (!is_null($line_item_wrapper->commerce_unit_price->value())) {
-    // Add the base price to the components array.
-    if (!commerce_price_component_load($line_item_wrapper->commerce_unit_price->value(), 'base_price')) {
-      $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
-        $line_item_wrapper->commerce_unit_price->value(),
-        'base_price',
-        $line_item_wrapper->commerce_unit_price->value(),
-        TRUE
-      );
-    }
-  }
+  $line_item = commerce_funds_deposit_line_item_new($deposit, $deposit_order->order_id);
 
   commerce_line_item_save($line_item);
 
@@ -244,20 +217,24 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
 /**
  * Creates new line item.
  */
-function commerce_funds_deposit_line_item_new($deposit, $quantity = 1, $order_id, $data = array(), $type = 'deposit') {
-  // Ensure a default deposit line item type.
-  if (empty($type)) {
-    $type = 'deposit';
-  }
+function commerce_funds_deposit_line_item_new($deposit, $order_id, $data = array()) {
 
   // Create the new line item.
   $line_item = entity_create('commerce_line_item', array(
     'type' => 'deposit',
     'order_id' => $order_id,
-    'line_item_label' => $deposit->sku,
+    'line_item_label' => 'Deposit ' . commerce_currency_format($deposit['amount'], $deposit['currency_code']),
     'quantity' => 1,
     'data' => $data,
   ));
+  
+  // Set the unit price.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  
+  $line_item_wrapper->commerce_unit_price->amount = $deposit['amount'];
+  $line_item_wrapper->commerce_unit_price->currency_code = $deposit['currency_code'];
+  
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($deposit, 'base_price', $deposit, TRUE);
 
   return $line_item;
 }
