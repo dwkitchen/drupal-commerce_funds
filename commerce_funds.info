@@ -6,7 +6,6 @@ dependencies[] = commerce
 dependencies[] = commerce_payment
 dependencies[] = rules
 dependencies[] = commerce_checkout
-dependencies[] = commerce_multicurrency
 
 ; Views handlers
 files[] = includes/views/handlers/commerce_funds_handler_field_amount.inc
