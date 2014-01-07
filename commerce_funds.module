@@ -308,16 +308,12 @@ function commerce_funds_transaction_delete_multiple($transaction_ids) {
  *   Commerce Price
  */
 function commerce_funds_credit($account_user, $amount) {
-
   $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
   $currency_code = $amount['currency_code'];
   if (empty($account)) {
-    ddebug_backtrace($account_user);
     $account = commerce_funds_account_new($account_user, $currency_code);
     commerce_funds_account_save($account);
   }
-
-
 
   $account->balance += $amount['amount'];
   $account->currency_code = $amount['currency_code'];
