@@ -1,5 +1,6 @@
 <?php
 /**
+ * @file
  * Views for the default funds UI.
  */
 

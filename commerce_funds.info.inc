@@ -30,13 +30,6 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'uid',
   );
 
-  $account_properties['balance'] = array(
-    'label' => t('Balance'),
-    'description' => t('The balance of the account.'),
-    'type' => 'decimal',
-    'schema field' => 'balance',
-  );
-
   $account_properties['currency_code'] = array(
     'label' => t('Currency'),
     'description' => t('The currency of the account.'),
@@ -97,13 +90,6 @@ function commerce_funds_entity_property_info() {
     'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'created',
-  );
-
-  $transaction_properties['amount'] = array(
-    'label' => t('Amount'),
-    'description' => t('The amount for this transaction.'),
-    'type' => 'decimal',
-    'schema field' => 'amount',
   );
 
   $transaction_properties['currency_code'] = array(
