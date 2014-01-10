@@ -194,7 +194,7 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
   	'amount' => commerce_currency_decimal_to_amount($form_state['values']['amount'], $currency_code, $round = TRUE),
     'currency_code' => $currency_code,
   );
-  
+
   //Create an order
   $deposit_order = (!empty($user->uid)) ? commerce_order_new($user->uid, 'checkout_review') : commerce_cart_order_new();
 
@@ -227,13 +227,13 @@ function commerce_funds_deposit_line_item_new($deposit, $order_id, $data = array
     'quantity' => 1,
     'data' => $data,
   ));
-  
+
   // Set the unit price.
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  
+
   $line_item_wrapper->commerce_unit_price->amount = $deposit['amount'];
   $line_item_wrapper->commerce_unit_price->currency_code = $deposit['currency_code'];
-  
+
   $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($deposit, 'base_price', $deposit, TRUE);
 
   return $line_item;

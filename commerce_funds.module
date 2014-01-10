@@ -206,12 +206,12 @@ function commerce_funds_account_load($account_id) {
  * @see entity_load()
  */
 function commerce_funds_account_load_by_user($account_user, $currency_code, $reset = FALSE) {
-  
+
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_funds_account')
   ->propertyCondition('uid', $account_user->uid)
   ->propertyCondition('currency_code', $currency_code);
-  
+  $return = array();
   $result = $query->execute();
   if (!empty($result['commerce_funds_account'])) {
     foreach($result['commerce_funds_account'] as $account) {
