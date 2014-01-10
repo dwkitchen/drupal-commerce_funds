@@ -152,15 +152,13 @@ function commerce_funds_transfer_funds_form_validate($form, &$form_state) {
     return FALSE;
   }
 
-  $user_balance = commerce_funds_account_load_by_user($user, $chosen_currency);
+  $account_funds_account = commerce_funds_account_load_by_user($user, $chosen_currency);
 
-  if ($user_balance->balance < intval(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE)) or $user_balance->balance < (commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE))) {
+  if ($account_funds_account->balance < intval(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE)) or $account_funds_account->balance < (commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE))) {
     $url = $base_url . t("/user/@user/funds/deposit", array('@user' => $user->uid));
     form_set_error('amount', t("You don't have enough funds to cover this transfer. Please " . l(t("Deposit Funds"), url($url))));
     return FALSE;
   }
-
-  $account_funds_account = commerce_funds_account_load_by_user($user, $chosen_currency);
 
   if (empty($account_funds_account)) {
     $db_balance = 0;
@@ -213,15 +211,15 @@ function commerce_funds_transfer_funds_form_submit($form, &$form_state) {
     $user_balance->currency_code = $chosen_currency;
     drupal_write_record('commerce_funds_account', $user_balance);
   }
-  $fees = variable_get('commerce_funds_fees', array());
+//   $fees = variable_get('commerce_funds_fees', array());
 
-  $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
-  $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
+//   $fee = array_key_exists('transfer', $fees) ? $fees['transfer'] : 0;
+//   $fee_fixed = array_key_exists('transfer', $fees) ? $fees['transfer_fixed'] : 0;
 
   $transfer_amount = intval(commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency, $round = TRUE));
 
-  $transfer_after_fee = $transfer_amount * (1.0 - commerce_currency_amount_to_decimal($fee, $chosen_currency));
-  $transfer_after_fee_fixed = $transfer_amount - $fee;
+//   $transfer_after_fee = $transfer_amount * (1.0 - commerce_currency_amount_to_decimal($fee, $chosen_currency));
+//   $transfer_after_fee_fixed = $transfer_amount - $fee;
 
   $amount = $form_state['values']['amount'];
   $transfer = commerce_funds_transfer_transaction($to_user, $from_user, $amount, $chosen_currency);
