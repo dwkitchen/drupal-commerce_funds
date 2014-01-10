@@ -28,29 +28,50 @@ function commerce_funds_deposit_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['user/%user/funds/deposit'] = array(
+    'title' => 'Deposit Funds',
+    'description' => 'Deposit Funds',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_deposit_funds_form', 1),
+    'access arguments' => array('deposit funds'),
+    'weight' => -25,
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file path' => drupal_get_path('module', 'commerce_funds_deposit'),
+    'file' => 'commerce_funds_deposit.module',
+  );
+
   return $items;
 }
 
 /**
- * Implements hook_commerce_product_type_info().
+ * Implements hook_commerce_line_item_type_info().
  */
-function commerce_funds_deposit_commerce_product_type_info() {
+function commerce_funds_deposit_commerce_line_item_type_info() {
+  $line_item_types = array();
 
-  return array(
-    'deposit' => array(
-      'type' => 'deposit',
-      'name' => 'Funds Deposit',
-      'description' => 'Stores a Funds Deposit Operation',
-      'help' => '',
-      'revision' => 1
-    )
+  $line_item_types['deposit'] = array(
+    'type' => 'deposit',
+    'name' => t('Deposit'),
+    'description' => t('Deposit line item'),
+    'product' => FALSE,
+    'add_form_submit_value' => t('Deposit'),
+    'base' => 'commerce_funds_deposit_line_item',
   );
+
+  return $line_item_types;
 }
 
+/**
+ * Loads commerce_funds_deposit_funds_form().
+ */
 function commerce_funds_deposit_funds() {
   return drupal_get_form('commerce_funds_deposit_funds_form');
 }
 
+/**
+ * Implements hook_form().
+ */
 function commerce_funds_deposit_funds_form($form, &$form_state) {
 
   $form['amount'] = array(
@@ -61,6 +82,26 @@ function commerce_funds_deposit_funds_form($form, &$form_state) {
     '#size' => 30,
     '#maxlength' => 128,
     '#required' => TRUE,
+  );
+
+  $currencies = variable_get('commerce_enabled_currencies');
+  if (empty($currencies)) {
+    $currency = commerce_default_currency();
+    $currencies[$currency] = $currency;
+  }
+  $enabled_currencies = array();
+  foreach ($currencies as $k => $v) {
+    if ($v !== 0 and !empty($v)) {
+      $enabled_currencies[] = $v;
+    }
+  }
+
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency'),
+    '#options' =>  $enabled_currencies,
+    '#default_value' => commerce_default_currency(),
+    '#description' => t('Select desire currency'),
   );
 
   $form['notes'] = array(
@@ -77,7 +118,24 @@ function commerce_funds_deposit_funds_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Validate the form.
+ */
 function commerce_funds_deposit_funds_form_validate($form, &$form_state) {
+
+  global $user;
+
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else {
+    $chosen_currency = $form_state['values']['currency'];
+  }
 
   if (!is_numeric($form_state['values']['amount'])) {
     form_set_error('amount', t('Value must be Numeric'));
@@ -88,39 +146,95 @@ function commerce_funds_deposit_funds_form_validate($form, &$form_state) {
     form_set_error('amount', t('Value must be greater than 0'));
     return FALSE;
   }
+
+  $account_funds_account = commerce_funds_account_load_by_user($user, $chosen_currency);
+
+  if (empty($account_funds_account)) {
+    $db_balance = 0;
+  }
+  else {
+    $db_balance = commerce_currency_amount_to_decimal($account_funds_account->balance, $chosen_currency);
+    $allowed_deposit = 20000000 - $db_balance;
+
+    $total_deposit = $allowed_deposit + $form_state['values']['amount'];
+    if (is_numeric($form_state['values']['amount']) && (floatval($form_state['values']['amount']) > 0) && $form_state['values']['amount'] > $allowed_deposit ) {
+      if ($allowed_deposit == 0) {
+        form_set_error('amount', t('You have reached the maximum amount that you can deposit.'));
+      }
+      else {
+        form_set_error('amount', t('You can deposit up to @allowed_deposit @currency', array('@currency' => $chosen_currency, '@allowed_deposit' => $allowed_deposit)));
+      }
+      return FALSE;
+    }
+  }
 }
 
+/**
+ * Submits the form.
+ */
 function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
 
   global $user;
 
-  $deposit = commerce_product_new('deposit');
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
 
-  $deposit->uid = $user->uid;
-  $deposit->sku = 'deposit_' . $user->uid . '_' . $form_state['values']['amount'] . '_' . microtime();
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else {
+    $currency_code = $form_state['values']['currency'];
+  }
 
-  $deposit->commerce_price['und'][0]['amount'] = $form_state['values']['amount'] * 100.0;
-  $deposit->commerce_price['und'][0]['currency_code'] = commerce_default_currency();
+  $_SESSION['currency'] = $currency_code;
 
-  $deposit->title = 'Deposit ' . commerce_currency_format($form_state['values']['amount'] * 100.0, commerce_default_currency());
+  $deposit = array(
+  	'amount' => commerce_currency_decimal_to_amount($form_state['values']['amount'], $currency_code, $round = TRUE),
+    'currency_code' => $currency_code,
+  );
 
-  commerce_product_save($deposit);
+  //Create an order
+  $deposit_order = (!empty($user->uid)) ? commerce_order_new($user->uid, 'checkout_review') : commerce_cart_order_new();
 
-  $deposit_order = ($user->uid) ? commerce_order_new($user->uid, 'checkout_checkout') : commerce_cart_order_new();
-
-  $line_item = commerce_product_line_item_new($deposit, 1, $deposit_order->order_id);
+  //Create a line item
+  $line_item = commerce_funds_deposit_line_item_new($deposit, $deposit_order->order_id);
 
   commerce_line_item_save($line_item);
 
   $order_wrapper = entity_metadata_wrapper('commerce_order', $deposit_order);
-
   $order_wrapper->commerce_line_items[] = $line_item;
-
+  $order_wrapper->save();
 
   $deposit_order->data['type'] = 'commerce_funds_deposit';
   $deposit_order->data['notes'] = $form_state['values']['notes'];
-
-  commerce_order_save($deposit_order);
+  $order = commerce_order_save($deposit_order);
 
   drupal_goto('checkout/' . $deposit_order->order_id);
+}
+
+/**
+ * Creates new line item.
+ */
+function commerce_funds_deposit_line_item_new($deposit, $order_id, $data = array()) {
+
+  // Create the new line item.
+  $line_item = entity_create('commerce_line_item', array(
+    'type' => 'deposit',
+    'order_id' => $order_id,
+    'line_item_label' => 'Deposit ' . commerce_currency_format($deposit['amount'], $deposit['currency_code']),
+    'quantity' => 1,
+    'data' => $data,
+  ));
+
+  // Set the unit price.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+  $line_item_wrapper->commerce_unit_price->amount = $deposit['amount'];
+  $line_item_wrapper->commerce_unit_price->currency_code = $deposit['currency_code'];
+
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($deposit, 'base_price', $deposit, TRUE);
+
+  return $line_item;
 }

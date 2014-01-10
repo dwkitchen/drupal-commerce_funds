@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- *   commerce_funds.rules.inc
+ * commerce_funds.rules.inc
  */
 
 /**

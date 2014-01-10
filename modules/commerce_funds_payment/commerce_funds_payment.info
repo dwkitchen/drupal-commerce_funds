@@ -3,4 +3,3 @@ description = Adds a "Funds" payment method
 package = Commerce Funds
 dependencies[] = commerce_funds
 core = 7.x
-
