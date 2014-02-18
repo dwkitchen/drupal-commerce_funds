@@ -5,6 +5,16 @@
  */
 
 /**
+ * Implements hook_views_api().
+ */
+function commerce_funds_withdraw_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_funds_withdraw') . '/includes/views',
+  );
+}
+
+/**
  * Implements hook_permission().
  */
 function commerce_funds_withdraw_permission() {
@@ -24,43 +34,88 @@ function commerce_funds_withdraw_permission() {
  * Implements hook_menu().
  */
 function commerce_funds_withdraw_menu() {
-
-  $items['admin/commerce/funds/withdrawals/approve/%'] = array(
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_funds_approve_withdrawal_request', 5),
-    'access arguments' => array('view own transactions'),
-    'type' => MENU_CALLBACK,
+  //Approve withdraw request
+  $items['admin/commerce/config/funds/withdrawals/approve/'] = array(
+    'title' => 'Approve withdraw requests',
+    'page callback' => 'commerce_funds_withdraw_funds_approve',
+    'access arguments' => array('administer funds'),
+    'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['admin/commerce/funds/withdrawals/decline/%'] = array(
+  //Approve the withdraws.
+  $items['admin/commerce/config/funds/withdrawals/approve/%'] = array(
+    'title' => 'Approve withdraws',
+    'description' => 'Approve the withdraw of funds',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_funds_decline_withdrawal_request', 5),
-    'access arguments' => array('view own transactions'),
+    'page arguments' => array('commerce_funds_approve_withdrawal_request_form', 6),
+    'access arguments' => array('administer funds'),
+    'weight' => -55,
     'type' => MENU_CALLBACK,
+    'file path' => drupal_get_path('module', 'commerce_funds_withdraw'),
+    'file' => 'commerce_funds_withdraw.module',
   );
 
-  $items['admin/commerce/funds/configure/withdraw-methods'] = array(
+  //Decline request and send a note with a reason.
+  $items['admin/commerce/config/funds/withdrawals/decline/'] = array(
+    'title' => 'Decline withdraw request',
+    'page callback' => 'commerce_funds_withdraw_funds_decline',
+    'access arguments' => array('administer funds'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //Decline the withdraws.
+  $items['admin/commerce/config/funds/withdrawals/decline/%'] = array(
+    'title' => 'Decline withdraws',
+    'description' => 'Decline the withdraws',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_decline_withdrawal_request_form', 6),
+    'access arguments' => array('administer funds'),
+    'weight' => -55,
+    'type' => MENU_CALLBACK,
+    'file path' => drupal_get_path('module', 'commerce_funds_withdraw'),
+    'file' => 'commerce_funds_withdraw.module',
+  );
+
+
+  //Choose withdraw-methods that will be avaiable to customers.
+  $items['admin/commerce/config/funds/withdraw-methods'] = array(
     'title' => 'Withdrawal Methods',
     'page callback' => 'commerce_funds_configure_withdraw_methods',
     'access arguments' => array('administer funds'),
     'type' => MENU_NORMAL_ITEM,
   );
-
+/*
+  //Withdraw requests.
   $items['user/funds/withdrawals'] = array(
     'title' => 'Withdrawal requests',
     'page callback' => 'commerce_funds_get_user_withdrawals',
     'access arguments' => array('withdraw funds'),
     'type' => MENU_CALLBACK,
-  );
+  );*/
 
+  //Create callback withdraws page.
   $items['user/funds/withdraw'] = array(
     'title' => 'Submit a Withdrawal Request',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_funds_withdraw_funds'),
+    'page callback' => 'commerce_funds_withdraw_funds',
     'access arguments' => array('withdraw funds'),
     'type' => MENU_CALLBACK,
   );
 
+  //Request withdraw by selecting amonth, currency and withdraw method
+  $items['user/%user/funds/withdraw'] = array(
+    'title' => 'Withdraw Funds',
+    'description' => 'Withdraw Funds',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_withdraw_funds_form', 1),
+    'access arguments' => array('withdraw funds'),
+    'weight' => -25,
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file path' => drupal_get_path('module', 'commerce_funds_withdraw'),
+    'file' => 'commerce_funds_withdraw.module',
+  );
+
+  //Select withdraw methods to configure.
   $items['user/funds/manage/withdrawal-methods'] = array(
     'title' => 'Configure Withdrawal Methods',
     'page callback' => 'commerce_funds_manage_withdrawal_methods',
@@ -68,6 +123,18 @@ function commerce_funds_withdraw_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  //Select withdraw methods to configure.
+  $items['user/funds/manage/withdrawal-methods/%'] = array(
+    'title' => 'Configure Withdrawal Method',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_manage_withdrawal_method_form', 4),
+    'access arguments' => array('withdraw funds'),
+    'type' => MENU_CALLBACK,
+    'file path' => drupal_get_path('module', 'commerce_funds_withdraw'),
+    'file' => 'commerce_funds_withdraw.module',
+  );
+
+  //Configure PayPal.
   $items['user/funds/manage/withdrawal-methods/paypal'] = array(
     'title' => 'Configure Paypal',
     'page callback' => 'drupal_get_form',
@@ -76,6 +143,7 @@ function commerce_funds_withdraw_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  //Configure Skrill.
   $items['user/funds/manage/withdrawal-methods/skrill'] = array(
     'title' => 'Configure Skrill',
     'page callback' => 'drupal_get_form',
@@ -84,6 +152,7 @@ function commerce_funds_withdraw_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  //Configure bank account details.
   $items['user/funds/manage/withdrawal-methods/bank_account'] = array(
     'title' => 'Configure Bank Account',
     'page callback' => 'drupal_get_form',
@@ -92,6 +161,7 @@ function commerce_funds_withdraw_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  //Configure check account details.1
   $items['user/funds/manage/withdrawal-methods/check'] = array(
     'title' => 'Configure Check',
     'page callback' => 'drupal_get_form',
@@ -100,40 +170,124 @@ function commerce_funds_withdraw_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+   //Refund callback.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/paypal-ec-refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_funds_withdraw_action'),
+    'access arguments' => array('administer withdraw requests'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
-function commerce_funds_approve_withdrawal_request($form, &$form_state, $request_id) {
+/**
+ * Implements hook_options_list().
+ */
+function commerce_funds_withdraw_status_options() {
+  $options = array();
 
+  $options = array(
+    'Pending' => 'Pending Approval',
+    'Declined' => 'Declined',
+    'Approved' => 'Approved',
+    'Transfered' => 'Transfered',
+   );
+
+  return $options;
+}
+
+/**
+ * Loads commerce_funds_withdraw_form(), with fields for amounth, currency and payment methods.
+ *
+ */
+function commerce_funds_withdraw_funds_approve() {
+  return drupal_get_form('commerce_funds_approve_withdrawal_request_form');
+}
+
+/**
+ * Loads commerce_funds_withdraw_form(), with fields for amounth, currency and payment methods.
+ *
+ */
+function commerce_funds_withdraw_funds_decline() {
+  return drupal_get_form('commerce_funds_decline_withdrawal_request_form');
+}
+/**
+ * Loads commerce_funds_withdraw_form(), with fields for amounth, currency and payment methods.
+ *
+ */
+function commerce_funds_withdraw_funds() {
+  return drupal_get_form('commerce_funds_withdraw_funds_form');
+}
+
+/**
+ * Saves a withdraw request.
+ *
+ * @param object $withdraw
+ *   The full withdraw object to save.
+ *
+ * @return
+ *   SAVED_NEW or SAVED_UPDATED depending on the operation performed.
+ */
+function commerce_funds_withdraw_save($withdraw) {
+  return entity_get_controller('commerce_funds_withdraw_requests')->save($withdraw);
+}
+
+/**
+ * Loads the form for approving the withdraw requests.
+ */
+function commerce_funds_approve_withdrawal_request_form($form, &$form_state, $request_id) {
+  //Collect all the ids and put them into an array.
+  $user_ids = array();
+  $pieces = explode(',', $request_id);
+
+  for($i=0; $i < count($pieces); $i++){
+    $request_ids[] = $pieces[$i];
+  }
   $form['#$request_id'] = $request_id;
+  $requests = commerce_funds_withdraw_load_multiple_by_reuests($request_ids);
+  for ($i=0; $i < count($requests); $i++) {
+    $user_ids[] = $requests[$i]->uid;
+  }
+  //This way will remove duplication of emails to display, if you want to add all duplicated emails needs to loop through the array
+  //$user_ids and get the emails.
+  $users = user_load_multiple($user_ids);
+  foreach($users as $user) {
+    $mails[] = $user->mail;
+  }
+  $emails = implode(', ', $mails);
 
-  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
-
-  $user = user_load($request['uid']);
-
-  return confirm_form($form, check_plain('Approve Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to approve the withdrawal request made by ' . $user->mail . '?'), t('Yes'));
+  return confirm_form($form, check_plain('Approve Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to approve the withdrawal request made by ' . $emails . '?'), t('Yes'));
 }
 
-function commerce_funds_approve_withdrawal_request_submit($form, &$form_state) {
+function commerce_funds_approve_withdrawal_request_form_submit($form, &$form_state) {
+  //Collect all the ids and put them into an array.
+  $user_ids = array();
+  $pieces = explode(',', $form['#$request_id']);
+  for($i=0; $i < count($pieces); $i++){
+    $request_ids[] = $pieces[$i];
 
-  $request_id = $form['#$request_id'];
+  }
+  $requests = commerce_funds_withdraw_load_multiple_by_reuests($request_ids);
+  $user_balance = array();
+  foreach($requests as $request){
+    $user_balance = commerce_funds_account_load_by_user(user_load($request->uid), $request->currency_code, $reset = FALSE);
+    $request->status = t('Approved');
+    $amount = array(
+      'amount' => $request->amount,
+      'currency_code' => $request->currency_code,
+      'reference' => user_load($request->uid)->uid,
+    );
+    commerce_funds_debit(user_load($request->uid), $amount);
+    commerce_funds_withdraw_save($request);
 
-  $fees = variable_get('commerce_funds_fees', array());
-
-  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
-
-  $request['status'] = t('Approved');
-
-  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $request['uid'])->fetchAssoc();
-  $user_balance['balance'] -= max(array($request['amount'] * (1.0 + $fees[$request['method']] / 100.0), $request['amount'] - $fees[$request['method'] . '_fixed']));
-
-  drupal_write_record('commerce_funds_user_funds', $user_balance, 'uid');
-  drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
-
-  drupal_goto('admin/commerce/funds/view-withdraw-requests');
+  }
+  drupal_set_message(t('Operation was successful.'), 'status');
+  drupal_goto('admin/commerce/config/funds');
 }
 
-function commerce_funds_decline_withdrawal_request($form, &$form_state, $request_id) {
+function commerce_funds_decline_withdrawal_request_form($form, &$form_state, $request_id) {
 
   $form['#$request_id'] = $request_id;
 
@@ -143,25 +297,49 @@ function commerce_funds_decline_withdrawal_request($form, &$form_state, $request
     '#description' => '',
   );
 
-  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
+  $request_ids = array();
+  $pieces = explode(',', $request_id);
 
-  $user = user_load($request['uid']);
-
-  return confirm_form($form, check_plain('Decline Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to decline the withdrawal request made by ' . $user->mail . '?'), check_plain('Yes'));
+  for($i=0; $i < count($pieces); $i++){
+    $request_ids[] = $pieces[$i];
+  }
+  $form['#$request_id'] = $request_id;
+  $requests = commerce_funds_withdraw_load_multiple_by_reuests($request_ids);
+  for ($i=0; $i < count($requests); $i++) {
+    $user_ids[] = $requests[$i]->uid;
+  }
+  $users = user_load_multiple($user_ids);
+  foreach($users as $user) {
+    $mails[] = $user->mail;
+  }
+  $emails = implode(', ', $mails);
+  return confirm_form($form, check_plain('Decline Request?'), 'admin/commerce/funds/view-withdraw-requests', check_plain('Are you sure you want to decline the withdrawal request made by ' . $emails . '?'), check_plain('Yes'));
 }
 
-function commerce_funds_decline_withdrawal_request_submit($form, &$form_state) {
+function commerce_funds_decline_withdrawal_request_form_submit($form, &$form_state) {
+  //Collect all the ids and put them into an array.
+  $request_ids = array();
+  $pieces = explode(',', $form['#$request_id']);
+  for($i=0; $i < count($pieces); $i++){
+    $request_ids[] = $pieces[$i];
 
-  $request_id = $form['#$request_id'];
-
-  $request = db_query("SELECT * FROM {commerce_funds_withdraw_requests} WHERE request_id= :request_id", array(':request_id' => $request_id))->fetchAssoc();
-
-  $request['status'] = t('Declined');
-  $request['notes'] = $form_state['values']['reason'];
-
-  drupal_write_record('commerce_funds_withdraw_requests', $request, 'request_id');
-
-  drupal_goto('admin/commerce/funds/view-withdraw-requests');
+  }
+  $requests = commerce_funds_withdraw_load_multiple_by_reuests($request_ids);
+  $user_balance = array();
+  foreach($requests as $request){
+    $user_balance = commerce_funds_account_load_by_user(user_load($request->uid), $request->currency_code, $reset = FALSE);
+    $request->status = t('Declined');
+    $request->notes = $form_state['values']['reason'];
+    $amount = array(
+      'amount' => $request->amount,
+      'currency_code' => $request->currency_code,
+      'reference' => user_load($request->uid)->uid,
+    );
+    commerce_funds_debit(user_load($request->uid), $amount);
+    commerce_funds_withdraw_save($request);
+  }
+  drupal_set_message(t('Operation was successful.'), 'status');
+  drupal_goto('admin/commerce/config/funds');
 }
 
 function commerce_funds_configure_withdraw_methods() {
@@ -199,6 +377,7 @@ function commerce_funds_manage_withdrawal_methods() {
   $methods = commerce_funds_get_enabled_withdrawal_methods();
 
   foreach ($methods as $key => $value) {
+    //Check if there's a card already stored.
     $methods[$key] = l($methods[$key], 'user/funds/manage/withdrawal-methods/' . $key);
   }
 
@@ -208,9 +387,8 @@ function commerce_funds_manage_withdrawal_methods() {
 function commerce_funds_manage_withdrawal_method_paypal($form, &$form_state) {
 
   $enabled_methods = variable_get('commerce_funds_withdrawal_methods', array());
-
-  if (!$enabled_methods['paypal'])
-    return FALSE;
+  if (empty($enabled_methods['paypal']))
+    //return FALSE;
 
   global $user;
 
@@ -237,6 +415,8 @@ function commerce_funds_manage_withdrawal_method_paypal_submit($form, &$form_sta
   global $user;
 
   user_save($user, array('data' => array('paypal' => $form_state['values'])));
+  drupal_set_message(t('Operation was successful.'), 'status');
+  drupal_goto('user/%user/funds/withdraw');
 }
 
 function commerce_funds_manage_withdrawal_method_skrill($form, &$form_state) {
@@ -465,14 +645,50 @@ function commerce_funds_get_enabled_withdrawal_methods() {
 }
 
 function commerce_funds_get_withdrawal_methods() {
+  $rules_methods = entity_load('rules_config');
+  //Use _commerce_cardonfile_capable_payment_methods() rather than commerce_payment_methods(), to determine which payment method can use card on file.
+  $payment_methods = _commerce_cardonfile_capable_payment_methods();
+  $pay_pal_methods = array();
+  //Check what payment methods are avaiable and which one of them is enabled. Display only those which are enabled.
+  foreach($payment_methods as $k => $v) {
+    foreach ($rules_methods as $key => $value){
+      if (($value->label == 'PayPal WPP - Credit Card' && $value->active) || ($value->label == 'PayPal WPS' && $value->active) || ($value->label == 'PayPal Express Checkout' && $value->active) || ($value->label == 'PayPal Payments Advanced' && $value->active) || ($value->label == 'Payflow Link' && $value->active)){
+        //Array containg all enabled PayPal methods.
+        $pay_pal_methods[$value->name] = $value->label;
+      }
+      if($value->label == $v['title'] && $value->active == TRUE){
+        $method_name[$k] = $v['title'];
+      }
+    }
+  }
 
+  //Check if PayPal method is enabled and exists.
+
+  //Payment method instance.
+  /*$payment_method_instance = _commerce_cardonfile_payment_method_instances('cardsave');*/
   $methods = array(
-    'paypal' => 'Paypal',
     'skrill' => 'Skrill',
     'bank_account' => 'Bank Account',
-    'check' => 'Check'
+    'check' => 'Check',
   );
 
+  if(empty($payment_methods)){
+    foreach ($rules_methods as $key => $value){
+      if (($value->label == 'PayPal WPP - Credit Card' && $value->active) || ($value->label == 'PayPal WPS' && $value->active) || ($value->label == 'PayPal Express Checkout' && $value->active) || ($value->label == 'PayPal Payments Advanced' && $value->active) || ($value->label == 'Payflow Link' && $value->active)){
+        //Array containg all enabled PayPal methods.
+        $paypal = TRUE;
+      }
+   }
+   if (!empty($paypal) and $paypal == TRUE) {
+     $method_name = array(
+       'paypal' => 'Paypal',
+     );
+     $methods = array_merge($methods,$method_name);
+   }
+  }
+  else {
+    $methods = array_merge($methods,$method_name);
+  }
   return $methods;
 }
 
@@ -559,7 +775,7 @@ function commerce_funds_view_withdrawal_requests_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/commerce/funds/view-withdraw-requests';
 }
 
-function commerce_funds_withdraw_funds($form, &$form_state) {
+function commerce_funds_withdraw_funds_form($form, &$form_state) {
 
   $methods = commerce_funds_get_enabled_withdrawal_methods();
 
@@ -581,12 +797,38 @@ function commerce_funds_withdraw_funds($form, &$form_state) {
     '#required' => TRUE,
   );
 
+  $currencies = variable_get('commerce_enabled_currencies');
+  if (empty($currencies)) {
+    $currency = commerce_default_currency();
+    $currencies[$currency] = $currency;
+  }
+  $enabled_currencies = array();
+  foreach ($currencies as $k => $v) {
+    if ($v !== 0 and !empty($v)) {
+      $enabled_currencies[] = $v;
+    }
+  }
+
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency'),
+    '#options' =>  $enabled_currencies,
+    '#default_value' => commerce_default_currency(),
+    '#description' => t('Select desire currency'),
+  );
+
   $form['methods'] = array(
     '#type' => 'radios',
     '#options' => $methods,
     '#title' => t('Choose a Withdrawal method'),
     '#default_value' => '',
     '#required' => TRUE,
+  );
+
+  $form['notes'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Notes'),
+    '#description' => '',
   );
 
   $form['submit'] = array(
@@ -597,21 +839,32 @@ function commerce_funds_withdraw_funds($form, &$form_state) {
   return $form;
 }
 
-function commerce_funds_withdraw_funds_validate($form, &$form_state) {
+function commerce_funds_withdraw_funds_form_validate($form, &$form_state) {
 
   global $user;
 
-  $fees = variable_get('commerce_funds_fees', array());
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
 
-  $user_balance = db_query("SELECT * FROM {commerce_funds_user_funds} WHERE uid=" . $user->uid)->fetchAssoc();
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else {
+    $chosen_currency = $form_state['values']['currency'];
+  }
+
+  $user_balance = commerce_funds_account_load_by_user($user, $chosen_currency);
 
   if (!is_numeric($form_state['values']['amount'])) {
     form_set_error('amount', t('Value must be Numeric'));
     return FALSE;
   }
 
-  if ($form_state['values']['amount'] * 100 > $user_balance['balance']) {
-    form_set_error('amount', t('Your available balance is') . ' ' . commerce_currency_format($user_balance['balance'], commerce_default_currency()));
+  //$db_balance = commerce_currency_amount_to_decimal($user_balance->balance, $chosen_currency);
+  if ($form_state['values']['amount'] > commerce_currency_amount_to_decimal(empty($user_balance->balance) ? 0 : $user_balance->balance, $chosen_currency)) {
+    form_set_error('amount', t('Your available balance is') . ' ' . commerce_currency_format(empty($user_balance->balance) ? 0 : $user_balance->balance, $chosen_currency));
     return FALSE;
   }
 
@@ -625,28 +878,41 @@ function commerce_funds_withdraw_funds_validate($form, &$form_state) {
     return FALSE;
   }
 
-  if (array_key_exists($form_state['values']['methods'], $fees)) {
+  if ($form_state['values']['methods']) {
 
-    $amount_plus_fees = max(array((1.0 + $fees[$form_state['values']['methods']] / 100.0) * $form_state['values']['amount'] * 100, ($form_state['values']['amount'] * 100) + $fees[$form_state['values']['methods'] . '_fixed']));
+    $amount = commerce_currency_amount_to_decimal($form_state['values']['amount'], $chosen_currency);
 
-    if ($amount_plus_fees > $user_balance['balance']) {
-      form_set_error('amount', t('You cannot withdraw more than') . ' ' . commerce_currency_format(min(array($user_balance['balance'] * (1 - $fees[$form_state['values']['methods']] / 100.0), $user_balance['balance'] - $fees[$form_state['values']['methods'] . '_fixed'])), commerce_default_currency()) . ' ' . t('using this method'));
+    if ($amount > $user_balance->balance) {
+      form_set_error('amount', t('You cannot withdraw more than') . ' ' . commerce_currency_decimal_to_amount($user_balance->balance, $chosen_currency));
       return FALSE;
     }
   }
 }
 
-function commerce_funds_withdraw_funds_submit($form, &$form_state) {
+function commerce_funds_withdraw_funds_form_submit($form, &$form_state) {
   global $user;
 
+  if (is_numeric($form_state['values']['currency'])) {
+    $form_result_value = $form_state['values']['currency'];
+    $form_state['values']['currency'] = $form_state['complete form']['currency']['#options'][$form_result_value];
+
+    $chosen_currency = $form_state['complete form']['currency']['#options'][$form_result_value];
+    $form_state['complete form']['currency']['#value'] = $chosen_currency;
+    $form_state['input']['currency'] = $chosen_currency;
+  }
+  else {
+    $chosen_currency = $form_state['values']['currency'];
+  }
   $request = new stdClass();
   $request->uid = $user->uid;
   $request->created = time();
   $request->method = $form_state['values']['methods'];
-  $request->amount = $form_state['values']['amount'] * 100;
-  $request->status = 'Pending Approval';
+  $request->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $chosen_currency);
+  $request->currency_code = $chosen_currency;
+  $request->status = 'Pending';
+  $request->notes = $form_state['values']['notes'];
 
-  drupal_write_record('commerce_funds_withdraw_requests', $request);
+  commerce_funds_withdraw_save($request);
 
   drupal_set_message(t('Your Withdrawal Request has been sent and will be processed in due order'), 'status');
 
@@ -656,4 +922,96 @@ function commerce_funds_withdraw_funds_submit($form, &$form_state) {
 function commerce_funds_get_user_withdrawals() {
   global $user;
   return theme('account_withdrawals', array('uid' => $user->uid));
+}
+
+/**
+ * Executes Mass Payments.
+ * $withdraw is the fully loaded Commerce Funds Withdraw object.
+ */
+function commerce_funds_withdraw_action($withdraw){
+  //If the withdraw method is PayPal
+  if($withdraw->method == 'paypal'){
+    $user = user_load($withdraw->uid);
+    $withdraw->amount = commerce_currency_amount_to_decimal($withdraw->amount, $withdraw->currency_code);
+    // Build a name-value pair array for this transaction.
+    $nvp = array(
+      'METHOD' => 'MassPay',
+      'EMAILSUBJECT' => 'Withdraw',
+      'CURRENCYCODE' => $withdraw->currency_code,
+      'RECEIVERTYPE' => 'EmailAddress',
+      'L_EMAIL0' => $user->mail,
+      'L_AMT0' =>  $withdraw->amount,
+      'L_UNIQUEID0' => $withdraw->request_id,
+      'L_NOTE0' => empty($withdraw->note) ? 'Notes' : $withdraw->note,
+    );
+
+    $payment_method = commerce_payment_method_instance_load('payflow_link|commerce_payment_payflow_link');
+    if (empty($payment_method['settings'])) {
+      $payment_method = commerce_payment_method_instance_load('paypal_ec|commerce_payment_paypal_ec');
+
+    }
+    elseif (empty($payment_method['settings'])) {
+      $payment_method = commerce_payment_method_instance_load('paypal_wpp|commerce_payment_paypal_wpp');
+    }
+    else {
+      $payment_method = commerce_payment_method_instance_load('paypal_wps|commerce_payment_paypal_wps');
+    }
+
+      $balance_respond = request_balance($payment_method);
+
+      if ($balance_respond['L_AMT0'] <= $withdraw->amount) {
+        drupal_set_message(t('You have insufficient funds to cover the withdraw for user:' . $user->mail . '.'),'warrning');
+      }
+      if (empty($balance_respond)){
+        drupal_set_message(t('Unable to connect to your PayPal account.Please contact your administrator.'),'error');
+      }
+      if ($balance_respond['L_CURRENCYCODE0'] != $withdraw->currency_code) {
+        drupal_set_message(t('The requested withdraw for user: ' . $user->mail . ' is in different currency(' . $withdraw->currency_code . ') than your PayPal account(' . $balance_respond['L_CURRENCYCODE0'] . ').'),'warrning');
+      }
+      $response = commerce_paypal_api_request($payment_method, $nvp);
+      if($response['ACK'] == 'Success') {
+        $withdraw->status = 'Transfered';
+        $withdraw->amount = commerce_currency_decimal_to_amount($withdraw->amount, $withdraw->currency_code);
+        commerce_funds_withdraw_save($withdraw);
+        drupal_set_message(t('Money were successfully transferred to ' . $user->mail ),'status');
+      }
+  }
+
+}
+
+/**
+ * Request Balance.
+*/
+function request_balance($payment_method){
+    $nvp = array(
+      'METHOD' => 'GetBalance',
+      'RETURNALLCURRENCIES' => 1,
+    );
+    $response = commerce_paypal_api_request($payment_method, $nvp);
+    return $response;
+}
+
+function commerce_funds_manage_withdrawal_method_form_submit($form, &$form_state) {
+    global $user;
+    user_save($user, array('data' => array($form_state['values']['method'] => $form_state['values'])));
+    drupal_set_message(t('Operation was successful. Please continue with the withdraw'), 'status');
+    drupal_goto('user/%user/funds/withdraw');
+}
+
+function commerce_cardonfile_load_by_user_card_method($user_id, $method, $card_num) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_cardonfile');
+  $query->propertyCondition('uid', $user_id)
+  ->propertyCondition('payment_method', $method)
+  ->propertyCondition('card_number', $card_num)
+  ->propertyOrderBy('card_id', 'DESC')
+  ->range($start = 0, $length = 1);
+  $result = $query->execute();
+  $return = array();
+  if (!empty($result['commerce_cardonfile'])) {
+    foreach($result['commerce_cardonfile'] as $card_info) {
+      $return[] = entity_load_single('commerce_cardonfile', $card_info->card_id);
+    }
+ }
+ return $return;
 }

@@ -6,6 +6,29 @@
  */
 
 /**
+ * Implements hook_rules_condition_info().
+ */
+function commerce_funds_rules_condition_info(){
+  $condition = array();
+
+  $condition['commerce_funds_checkout_deposit_type'] = array(
+    'label' => t('Line item comparison'),
+    'parameter' => array(
+      'order' => array(
+        'type' => 'commerce_order',
+        'label' => 'Withdraw for the current user',
+      ),
+    ),
+    'group' => t('Commerce Funds'),
+    'callbacks' => array(
+      'execute' => 'commerce_line_item_comparison',
+    ),
+  );
+
+  return $condition;
+}
+
+/**
  * Implements hook_rules_action_info().
  */
 function commerce_funds_rules_action_info() {

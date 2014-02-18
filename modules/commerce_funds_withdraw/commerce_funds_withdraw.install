@@ -42,6 +42,12 @@ function commerce_funds_withdraw_schema() {
         'type' => 'int',
         'not null' => TRUE,
       ),
+      'currency_code' => array(
+        'description' => 'The currency code of this account.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
       'status' => array(
         'description' => 'the status of the request',
         'type' => 'varchar',

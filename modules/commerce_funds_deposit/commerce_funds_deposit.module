@@ -210,6 +210,8 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
   $deposit_order->data['type'] = 'commerce_funds_deposit';
   $deposit_order->data['notes'] = $form_state['values']['notes'];
   $order = commerce_order_save($deposit_order);
+  $line_item->order_id = $deposit_order->order_id;
+  commerce_line_item_save($line_item);
 
   drupal_goto('checkout/' . $deposit_order->order_id);
 }

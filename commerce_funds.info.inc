@@ -110,5 +110,77 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'notes',
   );
 
+   // Add meta-data about the basic commerce_funds_withdraw properties.
+  $withdraw_properties = &$info['commerce_funds_withdraw_requests']['properties'];
+
+  $withdraw_properties['request_id'] = array(
+    'label' => t('Commerce funds withdraw ID'),
+    'description' => t('The internal numeric ID of the commerce funds withdraws.'),
+    'type' => 'integer',
+    'schema field' => 'request_id',
+  );
+
+  $withdraw_properties['uid'] = array(
+    'label' => t('Creator ID'),
+    'type' => 'user',
+    'description' => t('The unique ID of the commerce recurring entity creator.'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer commerce_funds entities',
+    'schema field' => 'uid',
+  );
+
+  $withdraw_properties['created'] = array(
+    'label' => t('Created'),
+    'description' => t('Time of creation.'),
+    'type' => 'date',
+    'getter callback' => 'entity_property_verbatim_get',
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer commerce_recurring entities',
+    'schema field' => 'created',
+  );
+
+  $withdraw_properties['method'] = array(
+    'label' => t('Payment Method'),
+    'description' => t('The currency of the account.'),
+    'type' => 'text',
+    'schema field' => 'method',
+  );
+
+  $withdraw_properties['amount'] = array(
+    'label' => t('Amount'),
+    'description' => t('Amount.'),
+    'type' => 'integer',
+    'schema field' => 'amount',
+  );
+
+  $withdraw_properties['currency_code'] = array(
+    'label' => t('Currency'),
+    'description' => t('The currency of the account.'),
+    'type' => 'text',
+    'getter callback' => 'entity_property_verbatim_get',
+    'setter callback' => 'entity_property_verbatim_set',
+    'schema field' => 'currency_code',
+  );
+
+  $withdraw_properties['status'] = array(
+    'label' => t('Status'),
+    'description' => t('The status of the withdraw request.'),
+    'options list' =>  'commerce_funds_withdraw_requests',
+    'type' => 'text',
+    'getter callback' => 'entity_property_verbatim_get',
+    'setter callback' => 'entity_property_verbatim_set',
+    'options list' =>  'commerce_funds_withdraw_status_options',
+    'schema field' => 'status',
+  );
+
+  $withdraw_properties['notes'] = array(
+    'label' => t('Notes'),
+    'description' => t('Notes for the withdraw request.'),
+    'type' => 'text',
+    'getter callback' => 'entity_property_verbatim_get',
+    'setter callback' => 'entity_property_verbatim_set',
+    'schema field' => 'notes',
+  );
+
   return $info;
 }

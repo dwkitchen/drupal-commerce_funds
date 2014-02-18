@@ -50,16 +50,6 @@ function commerce_funds_menu() {
     'weight' => -15,
   );
 
-  $items['admin/commerce/config/funds'] = array(
-    'title' => 'Funds',
-    'description' => 'Configure Funds Settings',
-    'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('administer funds'),
-    'file path' => drupal_get_path('module', 'system'),
-    'file' => 'system.admin.inc',
-    'weight' => -15,
-  );
-
   $items['user/%user/funds'] = array(
     'title' => 'Funds Account',
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -141,6 +131,36 @@ function commerce_funds_entity_info() {
     'permission labels' => array(
       'singular' => t('funds transaction'),
       'plural' => t('funds transactions'),
+    ),
+  );
+
+  $data['commerce_funds_withdraw_requests'] = array(
+    'label' => t('Commerce Funds Withdraws'),
+    'plural label' => t('Commerce Funds withdraws'),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'views controller class' => 'EntityDefaultViewsController',
+    'base table' => 'commerce_funds_withdraw_requests',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+      'id' => 'request_id',
+      'label' => 'request_id',
+    ),
+    'bundles' => array(),
+    'load hook' => 'commerce_funds_withdraw_load',
+    'view modes' => array(
+      'full' => array(
+        'label' => t('Administrator'),
+        'custom settings' => FALSE,
+      ),
+    ),
+    'uri callback' => 'commerce_funds_withdraw_uri',
+    'access callback' => 'commerce_funds_withdraw_access',
+    'token type' => 'commerce-funds-withdraw',
+    'metadata controller class' => '',
+    'permission labels' => array(
+      'singular' => t('funds withdraws'),
+      'plural' => t('funds withdraws'),
     ),
   );
 
@@ -385,4 +405,61 @@ function commerce_funds_debit($account_user, $amount) {
       commerce_funds_account_save($account);
     }
 
+}
+
+/**
+ * Loads a funds account by ID.
+ */
+function commerce_funds_withdraw_load($account_id) {
+  $accounts = entity_load('commerce_funds_withdraw_requests', $account_id);
+  return $accounts ? reset($accounts) : FALSE;
+}
+
+/**
+ * Loads multiple withdraw requests by user ID or based on a set of matching conditions.
+ *
+ * @see entity_load()
+ */
+function commerce_funds_withdraw_load_multiple_by_reuests($request_id, $reset = FALSE) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_funds_withdraw_requests')
+  ->propertyCondition('request_id', $request_id, $operator = 'IN');
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_funds_withdraw_requests'])) {
+    foreach($result['commerce_funds_withdraw_requests'] as $withdraw) {
+      $return[] = entity_load_single('commerce_funds_withdraw_requests', $withdraw->request_id);
+    }
+  }
+  return $return;
+}
+
+
+function commerce_line_item($line_item_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_line_item')
+  ->propertyCondition('line_item_id', $line_item_id)
+  ->propertyOrderBy('line_item_id', 'DESC')
+  ->range(0,1);
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_line_item'])) {
+    foreach($result['commerce_line_item'] as $line_item) {
+      $return[] = entity_load_single('commerce_line_item', $line_item->line_item_id);
+    }
+  }
+  return $return;
+}
+
+
+function commerce_line_item_comparison($deposit_order){
+    $item_id = $deposit_order->commerce_line_items['und'][0]['line_item_id'];
+    $line_item = commerce_line_item($item_id);
+      if ($line_item[0]->type == 'deposit' ) {
+        $return = TRUE;
+      }
+      elseif($line_item[0]->type != 'deposit' ) {
+        $return = FALSE;
+      }
+  return $return;
 }

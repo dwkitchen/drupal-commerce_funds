@@ -20,6 +20,9 @@ function commerce_funds_deposit_default_rules_configuration() {
 
   $rule
     ->event('commerce_payment_order_paid_in_full')
+    ->condition('commerce_funds_checkout_deposit_type', array(
+      'order:select' => 'commerce-order',
+    ))
     ->action('commerce_funds_credit', array(
       'account_user:select' => 'site:current-user',
       'amount:select' => 'commerce-order:commerce-order-total',
