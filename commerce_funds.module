@@ -408,11 +408,18 @@ function commerce_funds_debit($account_user, $amount) {
 }
 
 /**
- * Loads a funds account by ID.
+ * Loads requests by request_id.
  */
-function commerce_funds_withdraw_load($account_id) {
-  $accounts = entity_load('commerce_funds_withdraw_requests', $account_id);
-  return $accounts ? reset($accounts) : FALSE;
+function commerce_funds_withdraw_load($request_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_funds_withdraw_requests')
+  ->propertyCondition('request_id', $request_id);
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_funds_withdraw_requests'])) {
+      $return = entity_load_single('commerce_funds_withdraw_requests', $request_id);
+    }
+  return $return;
 }
 
 /**
@@ -434,7 +441,9 @@ function commerce_funds_withdraw_load_multiple_by_reuests($request_id, $reset = 
   return $return;
 }
 
-
+/**
+ * Get line item by id.
+ */
 function commerce_line_item($line_item_id) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_line_item')
@@ -451,7 +460,9 @@ function commerce_line_item($line_item_id) {
   return $return;
 }
 
-
+/**
+ * Checks whether or not the product type in the order is deposit or not.
+ */
 function commerce_line_item_comparison($deposit_order){
     $item_id = $deposit_order->commerce_line_items['und'][0]['line_item_id'];
     $line_item = commerce_line_item($item_id);

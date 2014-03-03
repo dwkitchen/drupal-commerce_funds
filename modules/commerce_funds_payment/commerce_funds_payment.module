@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * commerce_funds_payment.module
+ */
 
+/**
+ * Get the payment method info.
+ */
 function commerce_funds_payment_commerce_payment_method_info() {
 
   $payment_methods = array();
@@ -16,12 +23,15 @@ function commerce_funds_payment_commerce_payment_method_info() {
   return $payment_methods;
 }
 
+/**
+ * Submit payment form.
+ */
 function commerce_funds_payment_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
-
+  global $user;
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
   $total = commerce_line_items_total($wrapper->commerce_line_items);
 
-  $account_user = user_load($order->uid);
+  $account_user = user_load($user->uid);
 
   $funds_account = commerce_funds_account_load_by_user($account_user, $total['currency_code']);
 
@@ -51,6 +61,9 @@ function commerce_funds_payment_submit_form($payment_method, $pane_values, $chec
   return $form;
 }
 
+/**
+ * Validate payment form.
+ */
 function commerce_funds_payment_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $charge) {
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
   $total = commerce_line_items_total($wrapper->commerce_line_items);
@@ -67,37 +80,97 @@ function commerce_funds_payment_submit_form_validate($payment_method, $pane_form
   return FALSE;
 }
 
+/**
+ * Submits the payment form.
+ */
 function commerce_funds_payment_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
   $return = commerce_funds_payment_transaction($payment_method, $order, $charge);
   return $return;
 }
 
+/**
+ * Process the transactions for the current payment. Get seller(creator of the product) details and deposit the money to seller's account.
+ */
 function commerce_funds_payment_transaction($payment_method, $order, $amount) {
+  //Customer.
   $account_user = user_load($order->uid);
   $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
+  //Seller.
+  //Load all line items related with an order
+  $products = commerce_funds_payment_load_products($order->order_id);
+  for ($i=0; $i<count($products); $i++) {
+    $line_item = line_item_load_by_sku($products[$i]->sku, $order->order_id);
+    $loaded_seller_account = user_load($products[$i]->uid);
+    $current_line_item = line_item_load_by_sku($products[$i]->sku);
+    $product_amount = $line_item[0]->quantity * $products[$i]->commerce_price['und'][0]['amount'];
+    $amount_current_product = array(
+      'amount' => $product_amount,
+      'currency_code' => $products[$i]->commerce_price['und'][0]['currency_code'],
+    );
+    commerce_funds_credit($loaded_seller_account, $amount_current_product);
+  }
 
-  $account->balance -= $amount['amount'];
-
-  $funds_transaction = commerce_funds_transaction_new('payment');
-  $funds_transaction->account_id = $account->account_id;
-  $funds_transaction->reference = $order->order_id;
-  $funds_transaction->amount = -$amount['amount'];
-  $funds_transaction->currency_code = $amount['currency_code'];
-
-  if (commerce_funds_transaction_save($funds_transaction)) {
-    $transaction = commerce_payment_transaction_new('commerce_funds_payment', $order->order_id);
-    $transaction->instance_id = $payment_method['instance_id'];
-    $transaction->amount = $amount['amount'];
-    $transaction->currency_code = $amount['currency_code'];
-    $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-    $transaction->message = t('Payment processed successfully');
-    $transaction->remote_id = $funds_transaction->transaction_id;
-
-    if (commerce_payment_transaction_save($transaction)){
-      commerce_funds_account_save($account);
-      return TRUE;
-    }
+  $account_user = user_load($order->uid);
+  if (commerce_funds_debit($account_user, $amount)) {
+    return TRUE;
   }
 
   return FALSE;
+}
+
+/**
+ * Loads products(commerce_product) by order id.
+ */
+function commerce_funds_payment_load_products($order_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_order')
+  ->propertyCondition('order_id', $order_id)
+  ->propertyOrderBy('order_id', 'DESC');
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_order'])) {
+    foreach ($result['commerce_order'] as $order_id) {
+      $return = entity_load_single('commerce_order', $order_id->order_id);
+    }
+  }
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_line_item')
+  ->propertyCondition('order_id', $return->order_id)
+  ->propertyOrderBy('line_item_id', 'DESC');
+  $result = $query->execute();
+    if (!empty($result['commerce_line_item'])) {
+    foreach ($result['commerce_line_item'] as $line_item) {
+      $return = entity_load_single('commerce_line_item', $line_item->line_item_id);
+      $query_product = new EntityFieldQuery();
+      $query_product->entityCondition('entity_type', 'commerce_product')
+      ->propertyCondition('sku', $return->line_item_label)
+      ->propertyOrderBy('product_id', 'DESC');
+      $result_execution = $query_product->execute();
+      if (!empty($result_execution['commerce_product'])) {
+        foreach ($result_execution['commerce_product'] as $product) {
+          $result_product[] = entity_load_single('commerce_product', $product->product_id);
+        }
+      }
+    }
+  }
+  return $result_product;
+}
+
+/**
+ * Loads line items by sku and order_id.
+ */
+function line_item_load_by_sku($sku, $order_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_line_item')
+  ->propertyCondition('line_item_label', $sku)
+  ->propertyCondition('order_id', $order_id)
+  ->propertyOrderBy('line_item_id', 'DESC');
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_line_item'])) {
+    foreach ($result['commerce_line_item'] as $line_item) {
+      $return[] = entity_load_single('commerce_line_item', $line_item->line_item_id);
+    }
+  }
+  return $return;
 }
