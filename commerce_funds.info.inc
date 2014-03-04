@@ -146,12 +146,12 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'method',
   );
 
-  $withdraw_properties['amount'] = array(
+  /*$withdraw_properties['amount'] = array(
     'label' => t('Amount'),
     'description' => t('Amount.'),
     'type' => 'integer',
     'schema field' => 'amount',
-  );
+  );*/
 
   $withdraw_properties['currency_code'] = array(
     'label' => t('Currency'),
