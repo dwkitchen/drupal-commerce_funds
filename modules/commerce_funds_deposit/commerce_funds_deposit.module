@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   commerce_funds_depost.module
+ * commerce_funds_depost.module
  */
 
 /**
@@ -76,8 +76,8 @@ function commerce_funds_deposit_funds_form($form, &$form_state) {
 
   $form['amount'] = array(
     '#type' => 'textfield',
-    '#title' => t('Deposit Amount (' . commerce_default_currency() . ')'),
-    '#description' => t('Please enter the amount you wish to deposit in ' . commerce_default_currency()),
+    '#title' => t('Deposit Amount (@currency)', array('@currency' => commerce_default_currency())),
+    '#description' => t('Please enter the amount you wish to deposit in @currency', array('@currency' => commerce_default_currency())),
     '#default_value' => '',
     '#size' => 30,
     '#maxlength' => 128,
@@ -99,7 +99,7 @@ function commerce_funds_deposit_funds_form($form, &$form_state) {
   $form['currency'] = array(
     '#type' => 'select',
     '#title' => t('Currency'),
-    '#options' =>  $enabled_currencies,
+    '#options' => $enabled_currencies,
     '#default_value' => commerce_default_currency(),
     '#description' => t('Select desire currency'),
   );
@@ -157,7 +157,7 @@ function commerce_funds_deposit_funds_form_validate($form, &$form_state) {
     $allowed_deposit = 20000000 - $db_balance;
 
     $total_deposit = $allowed_deposit + $form_state['values']['amount'];
-    if (is_numeric($form_state['values']['amount']) && (floatval($form_state['values']['amount']) > 0) && $form_state['values']['amount'] > $allowed_deposit ) {
+    if (is_numeric($form_state['values']['amount']) && (floatval($form_state['values']['amount']) > 0) && $form_state['values']['amount'] > $allowed_deposit) {
       if ($allowed_deposit == 0) {
         form_set_error('amount', t('You have reached the maximum amount that you can deposit.'));
       }
@@ -191,14 +191,14 @@ function commerce_funds_deposit_funds_form_submit($form, &$form_state) {
   $_SESSION['currency'] = $currency_code;
 
   $deposit = array(
-  	'amount' => commerce_currency_decimal_to_amount($form_state['values']['amount'], $currency_code, $round = TRUE),
+    'amount' => commerce_currency_decimal_to_amount($form_state['values']['amount'], $currency_code),
     'currency_code' => $currency_code,
   );
 
-  //Create an order
+  // Create an order.
   $deposit_order = (!empty($user->uid)) ? commerce_order_new($user->uid, 'checkout_review') : commerce_cart_order_new();
 
-  //Create a line item
+  // Create a line item.
   $line_item = commerce_funds_deposit_line_item_new($deposit, $deposit_order->order_id);
 
   commerce_line_item_save($line_item);
