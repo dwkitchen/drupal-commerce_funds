@@ -8,7 +8,6 @@
  * Get the payment method info.
  */
 function commerce_funds_payment_commerce_payment_method_info() {
-
   $payment_methods = array();
 
   $payment_methods['commerce_funds_payment'] = array(
@@ -38,24 +37,24 @@ function commerce_funds_payment_submit_form($payment_method, $pane_values, $chec
   $result = $funds_account->balance - $total['amount'];
 
   $form['balance'] = array(
-      '#type' => 'markup',
-      '#markup' => 'Availiable Funds: ' . commerce_currency_format($funds_account->balance, $funds_account->currency_code),
-      '#prefix' => '<p>',
-    '#sufix' => '</p>'
+    '#type' => 'markup',
+    '#markup' => 'Availiable Funds: ' . commerce_currency_format($funds_account->balance, $funds_account->currency_code),
+    '#prefix' => '<p>',
+    '#sufix' => '</p>',
   );
 
   $form['total'] = array(
     '#type' => 'markup',
     '#markup' => 'Order Total: ' . commerce_currency_format($total['amount'], $total['currency_code']),
     '#prefix' => '<p>',
-    '#sufix' => '</p>'
+    '#sufix' => '</p>',
   );
 
   $form['result'] = array(
     '#type' => 'markup',
     '#markup' => 'Balance after order: ' . commerce_currency_format($result, $funds_account->currency_code),
     '#prefix' => '<p>',
-    '#sufix' => '</p>'
+    '#sufix' => '</p>',
   );
 
   return $form;
@@ -89,16 +88,19 @@ function commerce_funds_payment_submit_form_submit($payment_method, $pane_form, 
 }
 
 /**
- * Process the transactions for the current payment. Get seller(creator of the product) details and deposit the money to seller's account.
+ * Process the transactions for the current payment.
+ *
+ * Get seller(creator of the product) details and deposit the money to seller's
+ * account.
  */
 function commerce_funds_payment_transaction($payment_method, $order, $amount) {
-  //Customer.
+  // Customer.
   $account_user = user_load($order->uid);
   $account = commerce_funds_account_load_by_user($account_user, $amount['currency_code']);
-  //Seller.
-  //Load all line items related with an order
+
+  // Load all line items related with an order.
   $products = commerce_funds_payment_load_products($order->order_id);
-  for ($i=0; $i<count($products); $i++) {
+  for ($i = 0; $i < count($products); $i++) {
     $line_item = line_item_load_by_sku($products[$i]->sku, $order->order_id);
     $loaded_seller_account = user_load($products[$i]->uid);
     $current_line_item = line_item_load_by_sku($products[$i]->sku);
@@ -123,28 +125,22 @@ function commerce_funds_payment_transaction($payment_method, $order, $amount) {
  */
 function commerce_funds_payment_load_products($order_id) {
   $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'commerce_order')
-  ->propertyCondition('order_id', $order_id)
-  ->propertyOrderBy('order_id', 'DESC');
+  $query->entityCondition('entity_type', 'commerce_order')->propertyCondition('order_id', $order_id)->propertyOrderBy('order_id', 'DESC');
   $return = array();
   $result = $query->execute();
-    if (!empty($result['commerce_order'])) {
+  if (!empty($result['commerce_order'])) {
     foreach ($result['commerce_order'] as $order_id) {
       $return = entity_load_single('commerce_order', $order_id->order_id);
     }
   }
   $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'commerce_line_item')
-  ->propertyCondition('order_id', $return->order_id)
-  ->propertyOrderBy('line_item_id', 'DESC');
+  $query->entityCondition('entity_type', 'commerce_line_item')->propertyCondition('order_id', $return->order_id)->propertyOrderBy('line_item_id', 'DESC');
   $result = $query->execute();
-    if (!empty($result['commerce_line_item'])) {
+  if (!empty($result['commerce_line_item'])) {
     foreach ($result['commerce_line_item'] as $line_item) {
       $return = entity_load_single('commerce_line_item', $line_item->line_item_id);
       $query_product = new EntityFieldQuery();
-      $query_product->entityCondition('entity_type', 'commerce_product')
-      ->propertyCondition('sku', $return->line_item_label)
-      ->propertyOrderBy('product_id', 'DESC');
+      $query_product->entityCondition('entity_type', 'commerce_product')->propertyCondition('sku', $return->line_item_label)->propertyOrderBy('product_id', 'DESC');
       $result_execution = $query_product->execute();
       if (!empty($result_execution['commerce_product'])) {
         foreach ($result_execution['commerce_product'] as $product) {
@@ -161,13 +157,10 @@ function commerce_funds_payment_load_products($order_id) {
  */
 function line_item_load_by_sku($sku, $order_id) {
   $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'commerce_line_item')
-  ->propertyCondition('line_item_label', $sku)
-  ->propertyCondition('order_id', $order_id)
-  ->propertyOrderBy('line_item_id', 'DESC');
+  $query->entityCondition('entity_type', 'commerce_line_item')->propertyCondition('line_item_label', $sku)->propertyCondition('order_id', $order_id)->propertyOrderBy('line_item_id', 'DESC');
   $return = array();
   $result = $query->execute();
-    if (!empty($result['commerce_line_item'])) {
+  if (!empty($result['commerce_line_item'])) {
     foreach ($result['commerce_line_item'] as $line_item) {
       $return[] = entity_load_single('commerce_line_item', $line_item->line_item_id);
     }
