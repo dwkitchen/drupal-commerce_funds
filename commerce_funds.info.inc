@@ -110,7 +110,7 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'notes',
   );
 
-   // Add meta-data about the basic commerce_funds_withdraw properties.
+  // Add meta-data about the basic commerce_funds_withdraw properties.
   $withdraw_properties = &$info['commerce_funds_withdraw_requests']['properties'];
 
   $withdraw_properties['request_id'] = array(
@@ -146,13 +146,6 @@ function commerce_funds_entity_property_info() {
     'schema field' => 'method',
   );
 
-  /*$withdraw_properties['amount'] = array(
-    'label' => t('Amount'),
-    'description' => t('Amount.'),
-    'type' => 'integer',
-    'schema field' => 'amount',
-  );*/
-
   $withdraw_properties['currency_code'] = array(
     'label' => t('Currency'),
     'description' => t('The currency of the account.'),
@@ -165,11 +158,11 @@ function commerce_funds_entity_property_info() {
   $withdraw_properties['status'] = array(
     'label' => t('Status'),
     'description' => t('The status of the withdraw request.'),
-    'options list' =>  'commerce_funds_withdraw_requests',
+    'options list' => 'commerce_funds_withdraw_requests',
     'type' => 'text',
     'getter callback' => 'entity_property_verbatim_get',
     'setter callback' => 'entity_property_verbatim_set',
-    'options list' =>  'commerce_funds_withdraw_status_options',
+    'options list' => 'commerce_funds_withdraw_status_options',
     'schema field' => 'status',
   );
 
