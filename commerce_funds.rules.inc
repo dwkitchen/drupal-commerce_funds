@@ -8,7 +8,7 @@
 /**
  * Implements hook_rules_condition_info().
  */
-function commerce_funds_rules_condition_info(){
+function commerce_funds_rules_condition_info() {
   $condition = array();
 
   $condition['commerce_funds_checkout_deposit_type'] = array(
